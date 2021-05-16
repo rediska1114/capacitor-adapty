@@ -1,0 +1,33 @@
+PODS:
+  - Adapty (1.13.1):
+    - CryptoSwift (= 1.3.2)
+  - Capacitor (2.4.7):
+    - CapacitorCordova
+  - CapacitorCordova (2.4.7)
+  - CryptoSwift (1.3.2)
+
+DEPENDENCIES:
+  - Adapty (~> 1.13.0)
+  - "Capacitor (from `../node_modules/@capacitor/ios`)"
+  - "CapacitorCordova (from `../node_modules/@capacitor/ios`)"
+
+SPEC REPOS:
+  trunk:
+    - Adapty
+    - CryptoSwift
+
+EXTERNAL SOURCES:
+  Capacitor:
+    :path: "../node_modules/@capacitor/ios"
+  CapacitorCordova:
+    :path: "../node_modules/@capacitor/ios"
+
+SPEC CHECKSUMS:
+  Adapty: 2a7be6211de88f647b1946b595083db51ce20894
+  Capacitor: 4cd7b342d5a15b1f6f333d687358953afd7b2d8b
+  CapacitorCordova: 2c9d6e28d9d86c4da087fa2c3537c1841954bb12
+  CryptoSwift: 093499be1a94b0cae36e6c26b70870668cb56060
+
+PODFILE CHECKSUM: 36e9c16e32d7477456fc1ec9a42bf269b89d3975
+
+COCOAPODS: 1.10.1
