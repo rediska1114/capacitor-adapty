@@ -7,11 +7,13 @@ import Foundation
  * here: https://capacitorjs.com/docs/plugins/ios
  */
 @objc(CapacitorAdapty)
-public class CapacitorAdapty: CAPPlugin {
+public class CapacitorAdapty: CAPPlugin, AdaptyDelegate {
   // let events = RNAdaptyEvents()
 
   private var paywalls = [PaywallModel]()
   private var products = [ProductModel]()
+
+  // notifyListeners("appUrlOpen", data: makeUrlOpenObject(object), retainUntilConsumed: true)
 
   // @objc static func requiresMainQueueSetup() -> Bool {
   //   return true
@@ -335,6 +337,25 @@ public class CapacitorAdapty: CAPPlugin {
       return products.first(where: { $0.vendorProductId == productId })
     }
     return paywall.products.first(where: { $0.vendorProductId == productId })
+  }
+
+  public func didPurchase(product _: ProductModel, purchaserInfo _: PurchaserInfoModel?, receipt _: String?, appleValidationResult _: Parameters?, paywall _: PaywallViewController) {
+    print("[] DID PURCHASE")
+    notifyListeners("onPurchaseSuccess", data: ["purchase": "success"], retainUntilConsumed: true)
+  }
+
+  public func didFailPurchase(product _: ProductModel, error _: Error, paywall _: PaywallViewController) {
+    print("[] DID FAIL")
+    notifyListeners("onPurchaseFailed", data: ["purchase": "failed"], retainUntilConsumed: true)
+  }
+
+  public func didReceiveUpdatedPurchaserInfo(_ purchaserInfo: PurchaserInfoModel) {
+    print("[] DID UPDATE")
+    notifyListeners("onInfoUpdate", data: ["promo": purchaserInfo], retainUntilConsumed: true)
+  }
+
+  public func didReceivePromo(_ promo: PromoModel) {
+    notifyListeners("onPromoReceived", data: ["promo": promo], retainUntilConsumed: true)
   }
 }
 

@@ -128,4 +128,6 @@ export class Adapty implements IAdaptySerivice {
       source,
     });
   }
+
+  addListener = this.adapty.addListener;
 }
