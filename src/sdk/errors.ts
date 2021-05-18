@@ -43,4 +43,12 @@ export const AdaptyErrors = {
   invalidProperty: 2008, // Received invalid property data
   encodingFailed: 2009, // Parameters encoding failed
   missingURL: 2010, // Request url is nil
+} as const;
+
+type ErrorType = typeof AdaptyErrors;
+
+export type AdaptyError = {
+  message: string;
+  code: ErrorType[keyof ErrorType];
+  errorMessage: string;
 };
