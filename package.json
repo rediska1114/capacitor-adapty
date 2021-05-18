@@ -61,5 +61,8 @@
   },
   "bugs": {
     "url": "https://github.com/rediska1114/capacitor-adapty.git/issues"
+  },
+  "dependencies": {
+    "rxjs": "^6.6.7"
   }
 }
