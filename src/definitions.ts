@@ -68,4 +68,6 @@ export interface CapacitorAdaptyPlugin {
     eventName: 'onPromoReceived',
     listenerFunc: PromoReceivedListener,
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
+
+  // TODO remove listeners
 }

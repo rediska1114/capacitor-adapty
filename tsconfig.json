@@ -14,12 +14,14 @@
     "sourceMap": true,
     "strict": true,
     "target": "es2015",
-    "experimentalDecorators": true,
-    "downlevelIteration": true
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true
   },
-  "files": ["src/index.ts", "src/ngx.ts"],
+  "files": ["src/index.ts"],
   "angularCompilerOptions": {
-    "fullTemplateTypeCheck": true,
-    "strictInjectionParameters": true
+    "enableI18nLegacyMessageIdFormat": false,
+    "strictInjectionParameters": true,
+    "strictInputAccessModifiers": true,
+    "strictTemplates": true
   }
 }
