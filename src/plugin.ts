@@ -1,5 +1,4 @@
 import { CapacitorAdaptyPlugin } from './definitions';
-import { Injectable } from '@angular/core';
 import { Plugins } from '@capacitor/core';
 import {
   AdaptyDefaultOptions,
@@ -45,7 +44,6 @@ export interface IAdaptySerivice {
   ) => Promise<void>;
 }
 
-@Injectable()
 export class Adapty implements IAdaptySerivice {
   private adapty = CapacitorAdapty;
 
