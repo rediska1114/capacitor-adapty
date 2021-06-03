@@ -15,7 +15,7 @@ public class CapacitorAdapty: CAPPlugin, AdaptyDelegate {
 
   override public func load() {
     let sdkKey = getConfigValue("sdkKey") as! String
-    let observerMode = getConfigValue("appId") as? Bool ?? false
+    let observerMode = getConfigValue("observerMode") as? Bool ?? false
     let logLevel = getConfigValue("logLevel") as? String ?? "none"
 
     Adapty.activate(sdkKey, observerMode: observerMode)
