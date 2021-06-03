@@ -4,7 +4,6 @@
 // Define the plugin using the CAP_PLUGIN Macro, and
 // each method the plugin supports using the CAP_PLUGIN_METHOD macro.
 CAP_PLUGIN(CapacitorAdapty, "CapacitorAdapty",
-           CAP_PLUGIN_METHOD(activate, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(getPaywalls, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(updateAttribution, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(setExternalAnalyticsEnabled, CAPPluginReturnPromise);
@@ -19,5 +18,6 @@ CAP_PLUGIN(CapacitorAdapty, "CapacitorAdapty",
            CAP_PLUGIN_METHOD(getPromo, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(restorePurchases, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(getPurchaseInfo, CAPPluginReturnPromise);
+           CAP_PLUGIN_METHOD(getCustomerUserId, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(makePurchase, CAPPluginReturnPromise);
 )

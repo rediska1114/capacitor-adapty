@@ -27,6 +27,7 @@ public class CapacitorAdapty: CAPPlugin, AdaptyDelegate {
     default:
       Adapty.logLevel = .none
     }
+    print("adapty init")
   }
 
   // notifyListeners("appUrlOpen", data: makeUrlOpenObject(object), retainUntilConsumed: true)
