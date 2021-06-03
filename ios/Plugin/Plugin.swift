@@ -80,6 +80,7 @@ public class CapacitorAdapty: CAPPlugin, AdaptyDelegate {
     guard let source = call.getString("source") else {
       return call.reject("Missing source option")
     }
+    let networkUserId = call.getString("networkUserId")
 
     func parseSource(_ str: String) -> AttributionNetwork {
       switch str {
@@ -96,7 +97,7 @@ public class CapacitorAdapty: CAPPlugin, AdaptyDelegate {
       }
     }
 
-    Adapty.updateAttribution(attribution, source: parseSource(source)) { error in
+    Adapty.updateAttribution(attribution, source: parseSource(source), networkUserId: networkUserId) { error in
       if let error = error {
         return call.reject(error.localizedDescription, String(error.adaptyErrorCode.rawValue), error.originalError)
       }

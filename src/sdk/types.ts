@@ -494,6 +494,7 @@ export interface ActivateOptions {
 export interface UpdateAttributionOptions {
   attribution: Object;
   source: 'Branch' | 'AppsFlyer' | 'Adjust' | 'Custom' | 'AppleSearchAds';
+  networkUserId?: string
 }
 
 export interface SetExternalAnalyticsEnabledOptions {

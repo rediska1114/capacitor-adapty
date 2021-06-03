@@ -120,10 +120,12 @@ export class Adapty implements IAdaptySerivice {
   updateAttribution(
     attribution: Object,
     source: 'Branch' | 'AppsFlyer' | 'Adjust' | 'Custom' | 'AppleSearchAds',
+    networkUserId?: string
   ) {
     return this.adapty.updateAttribution({
       attribution,
       source,
+      networkUserId
     });
   }
 
