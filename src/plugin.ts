@@ -32,12 +32,7 @@ export interface IAdaptySerivice {
   getPaywalls: (options?: AdaptyDefaultOptions) => Promise<GetPaywallsResult>;
   setExternalAnalyticsEnabled: (isEnabled: boolean) => Promise<void>;
   setVariationID: (variationId: string, transactionId: string) => Promise<void>;
-  activate: (
-    sdkKey: string,
-    userId: string | any,
-    observerMode: boolean,
-    logLevel: 'errors' | 'verbose' | 'none',
-  ) => Promise<void>;
+
   updateAttribution: (
     object: Object,
     source: 'Branch' | 'AppsFlyer' | 'Adjust' | 'Custom' | 'AppleSearchAds',
@@ -103,29 +98,22 @@ export class Adapty implements IAdaptySerivice {
   setVariationID(variationId: string, transactionId: string) {
     return this.adapty.setVariationID({ variationId, transactionId });
   }
-  activate(
-    sdkKey: string,
-    userId: string | any,
-    observerMode: boolean,
-    logLevel: 'errors' | 'verbose' | 'none',
-  ) {
-    return this.adapty.activate({
-      sdkKey,
-      customerUserId: userId,
-      observerMode,
-      logLevel,
-    });
+
+  getCustomerUserId() {
+    return this.adapty
+      .getCustomerUserId()
+      .then(({ customerUserId }) => customerUserId);
   }
 
   updateAttribution(
     attribution: Object,
     source: 'Branch' | 'AppsFlyer' | 'Adjust' | 'Custom' | 'AppleSearchAds',
-    networkUserId?: string
+    networkUserId?: string,
   ) {
     return this.adapty.updateAttribution({
       attribution,
       source,
-      networkUserId
+      networkUserId,
     });
   }
 

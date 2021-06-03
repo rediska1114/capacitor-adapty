@@ -542,6 +542,9 @@ export interface GetPaywallsResult {
   paywalls: AdaptyPaywall[];
   products: AdaptyProduct[];
 }
+export interface GetCustomerUserIdResult {
+  customerUserId: string
+}
 export interface GetAPNSTokenResult {
   token: string;
 }

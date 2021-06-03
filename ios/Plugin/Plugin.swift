@@ -13,11 +13,23 @@ public class CapacitorAdapty: CAPPlugin, AdaptyDelegate {
   private var paywalls = [PaywallModel]()
   private var products = [ProductModel]()
 
-  // notifyListeners("appUrlOpen", data: makeUrlOpenObject(object), retainUntilConsumed: true)
+  override public func load() {
+    let sdkKey = getConfigValue("sdkKey") as! String
+    let observerMode = getConfigValue("appId") as? Bool ?? false
+    let logLevel = getConfigValue("logLevel") as? String ?? "none"
 
-  // @objc static func requiresMainQueueSetup() -> Bool {
-  //   return true
-  // }
+    Adapty.activate(sdkKey, observerMode: observerMode)
+    switch logLevel {
+    case "verbose":
+      Adapty.logLevel = .verbose
+    case "errors":
+      Adapty.logLevel = .errors
+    default:
+      Adapty.logLevel = .none
+    }
+  }
+
+  // notifyListeners("appUrlOpen", data: makeUrlOpenObject(object), retainUntilConsumed: true)
 
   private func cachePaywalls(_ paywalls: [PaywallModel]?) {
     self.paywalls.removeAll()
@@ -31,27 +43,6 @@ public class CapacitorAdapty: CAPPlugin, AdaptyDelegate {
     if let products = products {
       self.products.append(contentsOf: products)
     }
-  }
-
-  @objc
-  func activate(_ call: CAPPluginCall) {
-    guard let sdkKey = call.getString("sdkKey") else {
-      return call.reject("Missing sdkKey option")
-    }
-    let customerUserId = call.getString("customerUserId") ?? nil
-    let observerMode = call.getBool("observerMode") ?? false
-    let logLevel = call.getString("logLevel")
-
-    Adapty.activate(sdkKey, observerMode: observerMode, customerUserId: customerUserId)
-    switch logLevel {
-    case "verbose":
-      Adapty.logLevel = .verbose
-    case "errors":
-      Adapty.logLevel = .errors
-    default:
-      Adapty.logLevel = .none
-    }
-    call.success()
   }
 
   @objc
@@ -164,6 +155,13 @@ public class CapacitorAdapty: CAPPlugin, AdaptyDelegate {
       }
       call.resolve()
     }
+  }
+
+  @objc 
+  func getCustomerUserId(_ call: CAPPluginCall) {
+    call.resolve([
+        "customerUserId": Adapty.customerUserId as Any
+    ])
   }
 
   @objc

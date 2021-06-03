@@ -10,6 +10,7 @@ import {
   MakePurchaseOptions,
   MakePurchaseResult,
   RestorePurchasesResult,
+  GetCustomerUserIdResult,
   SetAPNSTokenOptions,
   SetExternalAnalyticsEnabledOptions,
   SetVariationIDOptions,
@@ -48,6 +49,7 @@ export interface CapacitorAdaptyPlugin {
   restorePurchases(): Promise<RestorePurchasesResult>;
   getPurchaseInfo(options?: AdaptyDefaultOptions): Promise<AdaptyPurchaserInfo>;
   makePurchase(options: MakePurchaseOptions): Promise<MakePurchaseResult>;
+  getCustomerUserId(): Promise<GetCustomerUserIdResult>
 
   addListener(
     eventName: 'onPurchaseSuccess',
