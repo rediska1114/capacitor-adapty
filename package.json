@@ -1,6 +1,6 @@
 {
   "name": "capacitor-adapty",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Adapty plugin for capacitor",
   "main": "plugin.js",
   "module": "esm/index.js",

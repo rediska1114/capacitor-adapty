@@ -8,8 +8,6 @@ import Foundation
  */
 @objc(CapacitorAdapty)
 public class CapacitorAdapty: CAPPlugin, AdaptyDelegate {
-  // let events = RNAdaptyEvents()
-
   private var paywalls = [PaywallModel]()
   private var products = [ProductModel]()
 
@@ -17,6 +15,8 @@ public class CapacitorAdapty: CAPPlugin, AdaptyDelegate {
     let sdkKey = getConfigValue("sdkKey") as! String
     let observerMode = getConfigValue("observerMode") as? Bool ?? false
     let logLevel = getConfigValue("logLevel") as? String ?? "none"
+
+    Adapty.delegate = self
 
     Adapty.activate(sdkKey, observerMode: observerMode)
     switch logLevel {
@@ -158,10 +158,10 @@ public class CapacitorAdapty: CAPPlugin, AdaptyDelegate {
     }
   }
 
-  @objc 
+  @objc
   func getCustomerUserId(_ call: CAPPluginCall) {
     call.resolve([
-        "customerUserId": Adapty.customerUserId as Any
+      "customerUserId": Adapty.customerUserId as Any,
     ])
   }
 
@@ -351,11 +351,12 @@ public class CapacitorAdapty: CAPPlugin, AdaptyDelegate {
 
   public func didReceiveUpdatedPurchaserInfo(_ purchaserInfo: PurchaserInfoModel) {
     print("[] DID UPDATE")
-    notifyListeners("onInfoUpdate", data: ["promo": purchaserInfo], retainUntilConsumed: true)
+    notifyListeners("onInfoUpdate", data: ["promo": encodeJson(from: purchaserInfo)], retainUntilConsumed: true)
   }
 
   public func didReceivePromo(_ promo: PromoModel) {
-    notifyListeners("onPromoReceived", data: ["promo": promo], retainUntilConsumed: true)
+    print("onPromoReceived")
+    notifyListeners("onPromoReceived", data: ["promo": encodeJson(from: promo)], retainUntilConsumed: true)
   }
 }
 
