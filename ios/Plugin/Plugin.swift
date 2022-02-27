@@ -351,12 +351,12 @@ public class CapacitorAdapty: CAPPlugin, AdaptyDelegate {
 
   public func didReceiveUpdatedPurchaserInfo(_ purchaserInfo: PurchaserInfoModel) {
     print("[] DID UPDATE")
-    notifyListeners("onInfoUpdate", data: ["promo": encodeJson(from: purchaserInfo)], retainUntilConsumed: true)
+    notifyListeners("onInfoUpdate", data: encodeJson(from: purchaserInfo), retainUntilConsumed: true)
   }
 
   public func didReceivePromo(_ promo: PromoModel) {
     print("onPromoReceived")
-    notifyListeners("onPromoReceived", data: ["promo": encodeJson(from: promo)], retainUntilConsumed: true)
+    notifyListeners("onPromoReceived", data: encodeJson(from: promo), retainUntilConsumed: true)
   }
 }
 
