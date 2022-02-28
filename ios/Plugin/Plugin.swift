@@ -11,6 +11,9 @@ public class CapacitorAdapty: CAPPlugin, AdaptyDelegate {
   private var paywalls = [PaywallModel]()
   private var products = [ProductModel]()
 
+  private var promoPaywalls = [PaywallModel]()
+  private var promoProducts = [ProductModel]()
+
   override public func load() {
     let sdkKey = getConfigValue("sdkKey") as! String
     let observerMode = getConfigValue("observerMode") as? Bool ?? false
@@ -43,6 +46,18 @@ public class CapacitorAdapty: CAPPlugin, AdaptyDelegate {
     self.products.removeAll()
     if let products = products {
       self.products.append(contentsOf: products)
+    }
+  }
+
+  private func cachePromoPaywalls(_ paywall: PaywallModel) {
+    promoPaywalls.removeAll()
+    promoPaywalls.append(paywall)
+  }
+
+  private func cachePromoProducts(_ products: [ProductModel]?) {
+    promoProducts.removeAll()
+    if let products = products {
+      promoProducts.append(contentsOf: products)
     }
   }
 
@@ -116,7 +131,7 @@ public class CapacitorAdapty: CAPPlugin, AdaptyDelegate {
     guard let variationId = call.getString("variationId") else {
       return call.reject("Missing variationId option")
     }
-    guard let paywall = paywalls.first(where: { $0.variationId == variationId }) else {
+    guard let paywall = findPaywall(variationId: variationId) else {
       return call.reject("Paywall with such variation ID wasn't found")
     }
     Adapty.logShowPaywall(paywall)
@@ -278,6 +293,12 @@ public class CapacitorAdapty: CAPPlugin, AdaptyDelegate {
       if let error = error {
         return call.reject(error.localizedDescription, String(error.adaptyErrorCode.rawValue), error.originalError)
       }
+
+      if let paywall = promo?.paywall {
+        self.cachePromoPaywalls(paywall)
+        self.cachePromoProducts(paywall.products)
+      }
+
       call.resolve(encodeJson(from: promo))
     }
   }
@@ -331,12 +352,39 @@ public class CapacitorAdapty: CAPPlugin, AdaptyDelegate {
   }
 
   private func findProduct(productId: String, variationId: String?) -> ProductModel? {
-    guard let variationId = variationId,
-          let paywall = paywalls.first(where: { $0.variationId == variationId })
-    else {
-      return products.first(where: { $0.vendorProductId == productId })
+    guard let variationId = variationId else {
+      if let anyProduct = products.first(where: { $0.vendorProductId == productId }) {
+        return anyProduct
+      }
+
+      if let anyPromoProduct = promoProducts.first(where: { $0.vendorProductId == productId }) {
+        return anyPromoProduct
+      }
+
+      return nil
     }
-    return paywall.products.first(where: { $0.vendorProductId == productId })
+
+    let product = findPaywall(variationId: variationId)?.products.first(where: { $0.vendorProductId == productId })
+
+    if product == nil {
+      if let anyProduct = products.first(where: { $0.vendorProductId == productId }) {
+        return anyProduct
+      }
+      if let anyPromoProduct = promoProducts.first(where: { $0.vendorProductId == productId }) {
+        return anyPromoProduct
+      }
+    }
+
+    return product
+  }
+
+  private func findPaywall(variationId: String) -> PaywallModel? {
+    let paywall = paywalls.first(where: { $0.variationId == variationId })
+    if paywall == nil {
+      let promoPaywall = promoPaywalls.first(where: { $0.variationId == variationId })
+      return promoPaywall
+    }
+    return paywall
   }
 
   public func didPurchase(product _: ProductModel, purchaserInfo _: PurchaserInfoModel?, receipt _: String?, appleValidationResult _: Parameters?, paywall _: PaywallViewController) {
