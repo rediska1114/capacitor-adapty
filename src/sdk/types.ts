@@ -139,6 +139,7 @@ export interface AdaptyProductSubscriptionPeriod {
 }
 
 export interface AdaptyPurchaserInfo {
+  profileId: string
   /**
    * Object where the keys are paid access level identifiers
    * configured by developer in Adapty dashboard.
@@ -535,6 +536,7 @@ export interface SetVariationIDOptions {
 export interface MakePurchaseOptions {
   productId: string;
   variationId?: string;
+  offerId?: string
 }
 
 //

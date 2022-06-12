@@ -26,7 +26,8 @@ export interface IAdaptySerivice {
   restorePurchases: () => Promise<RestorePurchasesResult>;
   makePurchase: (
     product: string,
-    variationId: string | undefined,
+    variationId?: string,
+    offerId?: string,
   ) => Promise<MakePurchaseResult>;
   getPromo: () => Promise<AdaptyPromo>;
   getPaywalls: (options?: AdaptyDefaultOptions) => Promise<GetPaywallsResult>;
@@ -78,10 +79,11 @@ export class Adapty implements IAdaptySerivice {
     return this.adapty.restorePurchases();
   }
 
-  makePurchase(productId: string, variationId: string | undefined) {
+  makePurchase(productId: string, variationId?: string, offerId?: string) {
     return this.adapty.makePurchase({
       productId,
       variationId,
+      offerId,
     });
   }
 

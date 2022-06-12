@@ -27,13 +27,13 @@ public class CapacitorAdapty: CAPPlugin, AdaptyDelegate {
       Adapty.logLevel = .verbose
     case "errors":
       Adapty.logLevel = .errors
+    case "all":
+      Adapty.logLevel = .all
     default:
       Adapty.logLevel = .none
     }
-    print("adapty init")
+    print("[adapty] — init")
   }
-
-  // notifyListeners("appUrlOpen", data: makeUrlOpenObject(object), retainUntilConsumed: true)
 
   private func cachePaywalls(_ paywalls: [PaywallModel]?) {
     self.paywalls.removeAll()
@@ -334,11 +334,13 @@ public class CapacitorAdapty: CAPPlugin, AdaptyDelegate {
     }
     let variationId = call.getString("variationId")
 
+    let offerId = call.getString("offerId")
+
     guard let product = findProduct(productId: productId, variationId: variationId) else {
       return call.reject("Product with such ID wasn't found")
     }
 
-    Adapty.makePurchase(product: product) {
+    Adapty.makePurchase(product: product, offerId: offerId) {
       purchaserInfo, receipt, _, product, error in
       if let error = error {
         return call.reject(error.localizedDescription, String(error.adaptyErrorCode.rawValue), error.originalError)
@@ -388,22 +390,22 @@ public class CapacitorAdapty: CAPPlugin, AdaptyDelegate {
   }
 
   public func didPurchase(product _: ProductModel, purchaserInfo _: PurchaserInfoModel?, receipt _: String?, appleValidationResult _: Parameters?, paywall _: PaywallViewController) {
-    print("[] DID PURCHASE")
+    print("[adapty] — DID PURCHASE")
     notifyListeners("onPurchaseSuccess", data: ["purchase": "success"], retainUntilConsumed: true)
   }
 
   public func didFailPurchase(product _: ProductModel, error _: Error, paywall _: PaywallViewController) {
-    print("[] DID FAIL")
+    print("[adapty] — DID FAIL")
     notifyListeners("onPurchaseFailed", data: ["purchase": "failed"], retainUntilConsumed: true)
   }
 
   public func didReceiveUpdatedPurchaserInfo(_ purchaserInfo: PurchaserInfoModel) {
-    print("[] DID UPDATE")
+    print("[adapty] — DID UPDATE")
     notifyListeners("onInfoUpdate", data: encodeJson(from: purchaserInfo), retainUntilConsumed: true)
   }
 
   public func didReceivePromo(_ promo: PromoModel) {
-    print("onPromoReceived")
+    print("[adapty] — onPromoReceived", promo)
     notifyListeners("onPromoReceived", data: encodeJson(from: promo), retainUntilConsumed: true)
   }
 }
@@ -415,7 +417,7 @@ func encodeJson<T: Encodable>(from data: T) -> [String: Any] {
     do {
       return try JSONSerialization.jsonObject(with: json, options: []) as? [String: Any] ?? [:]
     } catch {
-      print(error.localizedDescription)
+      print("[adapty] — encodeJson", error.localizedDescription, data)
     }
   }
   return [:]
