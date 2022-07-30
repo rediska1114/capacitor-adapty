@@ -19,18 +19,12 @@ import {
   AdaptyDefaultOptions,
 } from './sdk/types';
 
-declare global {
-  interface PluginRegistry {
-    CapacitorAdapty: CapacitorAdaptyPlugin;
-  }
-}
-
 export type PurchaseSuccessListener = (data: { purchase: 'success' }) => void;
 export type PurchaseFailedListener = (data: { purchase: 'failed' }) => void;
 export type InfoUpdateListener = (data: AdaptyPurchaserInfo) => void;
 export type PromoReceivedListener = (data: AdaptyPromo) => void;
 
-export interface CapacitorAdaptyPlugin {
+export interface AdaptyPlugin {
   activate(options: ActivateOptions): Promise<void>;
   getPaywalls(options?: AdaptyDefaultOptions): Promise<GetPaywallsResult>;
   updateAttribution(options: UpdateAttributionOptions): Promise<void>;
@@ -49,7 +43,7 @@ export interface CapacitorAdaptyPlugin {
   restorePurchases(): Promise<RestorePurchasesResult>;
   getPurchaseInfo(options?: AdaptyDefaultOptions): Promise<AdaptyPurchaserInfo>;
   makePurchase(options: MakePurchaseOptions): Promise<MakePurchaseResult>;
-  getCustomerUserId(): Promise<GetCustomerUserIdResult>
+  getCustomerUserId(): Promise<GetCustomerUserIdResult>;
 
   addListener(
     eventName: 'onPurchaseSuccess',

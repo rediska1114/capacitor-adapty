@@ -3,8 +3,9 @@
     "allowUnreachableCode": false,
     "declaration": true,
     "esModuleInterop": true,
-    "lib": ["dom", "es2015"],
-    "module": "es2015",
+    "inlineSources": true,
+    "lib": ["dom", "es2017"],
+    "module": "esnext",
     "moduleResolution": "node",
     "noFallthroughCasesInSwitch": true,
     "noUnusedLocals": true,
@@ -13,9 +14,7 @@
     "pretty": true,
     "sourceMap": true,
     "strict": true,
-    "target": "es2015",
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true
+    "target": "es2017"
   },
   "files": ["src/index.ts"]
 }

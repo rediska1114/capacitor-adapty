@@ -3,7 +3,7 @@
 
 // Define the plugin using the CAP_PLUGIN Macro, and
 // each method the plugin supports using the CAP_PLUGIN_METHOD macro.
-CAP_PLUGIN(CapacitorAdapty, "CapacitorAdapty",
+CAP_PLUGIN(AdaptyPlugin, "Adapty",
            CAP_PLUGIN_METHOD(getPaywalls, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(updateAttribution, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(setExternalAnalyticsEnabled, CAPPluginReturnPromise);
