@@ -1,424 +1,430 @@
 import Adapty
 import Capacitor
 import Foundation
+import StoreKit
 
-/**
- * Please read the Capacitor iOS Plugin Development Guide
- * here: https://capacitorjs.com/docs/plugins/ios
- */
+public var MEMO_ACTIVATION_ARGS: [AnyHashable: Any] = [:]
+public func == <K, L: Any, R: Any>(lhs: [K: L], rhs: [K: R]) -> Bool {
+    (lhs as NSDictionary).isEqual(to: rhs)
+}
+
 @objc(AdaptyPlugin)
 public class AdaptyPlugin: CAPPlugin, AdaptyDelegate {
-    private var paywalls = [PaywallModel]()
-    private var products = [ProductModel]()
+    @objc func activate(_ call: CAPPluginCall) {
+        if call.options == MEMO_ACTIVATION_ARGS {
+            return call.resolve()
+        } else {
+            MEMO_ACTIVATION_ARGS = call.options
+        }
 
-    private var promoPaywalls = [PaywallModel]()
-    private var promoProducts = [ProductModel]()
+        guard let apiKey = call.getString("apiKey") else {
+            return call.reject("[AdaptyPlugin] Missing apiKey argument")
+        }
 
-    override public func load() {
-        let sdkKey = getConfigValue("sdkKey") as! String
-        let observerMode = getConfigValue("observerMode") as? Bool ?? false
-        let logLevel = getConfigValue("logLevel") as? String ?? "none"
+        let customerUserId = call.getString("customerUserId")
+        let logLevel = call.getString("logLevel", "error")
+        let observerMode = call.getBool("observerMode", false)
+        let enableUsageLogs = call.getBool("enableUsageLogs", false)
+
+        let storeKit2Usage = call.getString("storeKit2Usage", "default")
+
+        guard let libVersion = call.getString("libVersion") else {
+            return call.reject("[AdaptyPlugin] Missing libVersion argument")
+        }
+
+        Adapty.setCrossPlatformSDK(version: libVersion, name: "capacitor")
+
+        Adapty.activate(
+            apiKey,
+            observerMode: observerMode,
+            customerUserId: customerUserId,
+            enableUsageLogs: enableUsageLogs,
+            storeKit2Usage: StoreKit2Usage(from: storeKit2Usage)
+        ) { result in
+            switch result {
+            case .none:
+                Adapty.logLevel = AdaptyLogLevel(from: logLevel)
+
+                call.resolve()
+
+            case let .some(error):
+                call.reject("[AdaptyPlugin] \(error.localizedDescription)", String(error.adaptyErrorCode.rawValue), error.originalError)
+            }
+        }
 
         Adapty.delegate = self
-
-        Adapty.activate(sdkKey, observerMode: observerMode)
-        switch logLevel {
-        case "verbose":
-            Adapty.logLevel = .verbose
-        case "errors":
-            Adapty.logLevel = .errors
-        case "all":
-            Adapty.logLevel = .all
-        default:
-            Adapty.logLevel = .none
-        }
-        print("[adapty] — init")
     }
 
-    private func cachePaywalls(_ paywalls: [PaywallModel]?) {
-        self.paywalls.removeAll()
-        if let paywalls = paywalls {
-            self.paywalls.append(contentsOf: paywalls)
-        }
-    }
-
-    private func cacheProducts(_ products: [ProductModel]?) {
-        self.products.removeAll()
-        if let products = products {
-            self.products.append(contentsOf: products)
-        }
-    }
-
-    private func cachePromoPaywalls(_ paywall: PaywallModel) {
-        promoPaywalls.removeAll()
-        promoPaywalls.append(paywall)
-    }
-
-    private func cachePromoProducts(_ products: [ProductModel]?) {
-        promoProducts.removeAll()
-        if let products = products {
-            promoProducts.append(contentsOf: products)
-        }
-    }
-
-    @objc
-    func getPaywalls(_ call: CAPPluginCall) {
-        let forceUpdate = call.getBool("forceUpdate") ?? false
-
-        Adapty.getPaywalls(forceUpdate: forceUpdate) { paywalls, products, error in
-            if let error = error {
-                return call.reject(error.localizedDescription, String(error.adaptyErrorCode.rawValue), error.originalError)
-            }
-
-            self.cachePaywalls(paywalls)
-            self.cacheProducts(products)
-
-            call.resolve(
-                encodeJson(from: GetPaywallsResult(paywalls: paywalls, products: products))
-            )
-        }
-    }
-
-    @objc
-    func updateAttribution(_ call: CAPPluginCall) {
+    @objc func updateAttribution(_ call: CAPPluginCall) {
         guard let attribution = call.getObject("attribution") else {
-            return call.reject("Failed to convert object to [AnyHashable: Any]")
-        }
-        guard let source = call.getString("source") else {
-            return call.reject("Missing source option")
-        }
-        let networkUserId = call.getString("networkUserId")
-
-        func parseSource(_ str: String) -> AttributionNetwork {
-            switch str {
-            case "Branch":
-                return .branch
-            case "Adjust":
-                return .adjust
-            case "AppsFlyer":
-                return .appsflyer
-            case "AppleSearchAds":
-                return .appleSearchAds
-            default:
-                return .custom
-            }
+            return call.reject("[AdaptyPlugin] Missing attribution argument")
         }
 
-        Adapty.updateAttribution(attribution, source: parseSource(source), networkUserId: networkUserId) { error in
-            if let error = error {
-                return call.reject(error.localizedDescription, String(error.adaptyErrorCode.rawValue), error.originalError)
+        guard let sourceString = call.getString("source") else {
+            return call.reject("[AdaptyPlugin] Missing source argument")
+        }
+
+        guard let source = AdaptyAttributionSource(rawValue: sourceString) else {
+            return call.reject("[AdaptyPlugin] Invalid source argument")
+        }
+
+         let networkUserId = call.getString("networkUserId")
+
+        Adapty.updateAttribution(attribution, source: source, networkUserId: networkUserId) { maybeErr in
+            if let error = maybeErr {
+                return call.reject("[AdaptyPlugin] \(error.localizedDescription)", String(error.adaptyErrorCode.rawValue), error.originalError)
             }
 
-            return call.resolve()
+            call.resolve()
         }
     }
 
-    @objc
-    func setExternalAnalyticsEnabled(_ call: CAPPluginCall) {
-        guard let isEnabled = call.getBool("isEnabled") else {
-            return call.reject("Missing isEnabled option")
+    @objc func getPaywall(_ call: CAPPluginCall) {
+        guard let id = call.getString("id") else {
+            return call.reject("[AdaptyPlugin] Missing id argument")
         }
-        Adapty.setExternalAnalyticsEnabled(isEnabled) { error in
-            if let error = error {
-                return call.reject(error.localizedDescription, String(error.adaptyErrorCode.rawValue), error.originalError)
+
+        guard let locale = call.getString("locale") else {
+            return call.reject("[AdaptyPlugin] Missing locale argument")
+        }
+
+        Adapty.getPaywall(id, locale: locale) { result in
+            switch result {
+            case let .success(paywall):
+                call.resolve(JSONHelper.encode(paywall))
+            case let .failure(error):
+                call.reject("[AdaptyPlugin] \(error.localizedDescription)", String(error.adaptyErrorCode.rawValue), error.originalError)
             }
-            return call.resolve()
         }
     }
 
-    @objc
-    func logShowPaywall(_ call: CAPPluginCall) {
-        guard let variationId = call.getString("variationId") else {
-            return call.reject("Missing variationId option")
+    @objc func getPaywallProducts(_ call: CAPPluginCall) {
+        guard let paywallData = call.getObject("paywall") else {
+            return call.reject("[AdaptyPlugin] Missing paywall argument")
         }
-        guard let paywall = findPaywall(variationId: variationId) else {
-            return call.reject("Paywall with such variation ID wasn't found")
+
+        guard let paywall = JSONHelper.decode(AdaptyPaywall.self, from: paywallData) else {
+            return call.reject("[AdaptyPlugin] Invalid paywall argument")
         }
-        Adapty.logShowPaywall(paywall)
-        call.resolve()
+
+        Adapty.getPaywallProducts(paywall: paywall) { result in
+            switch result {
+            case let .success(products):
+                call.resolve(JSONHelper.encode(["products": products]))
+            case let .failure(error):
+                call.reject("[AdaptyPlugin] \(error.localizedDescription)", String(error.adaptyErrorCode.rawValue), error.originalError)
+            }
+        }
     }
 
-    @objc
-    func getAPNSToken(_ call: CAPPluginCall) {
-        call.resolve([
-            "token": Adapty.apnsTokenString as Any,
-        ])
-    }
+    @objc func logShowOnboarding(_ call: CAPPluginCall) {
+        let name = call.getString("name")
 
-    @objc
-    func setAPNSToken(_ call: CAPPluginCall) {
-        guard let apns = call.getString("apns") else {
-            return call.reject("Missing apns option")
+        let screenName = call.getString("screenName")
+
+        guard let screenOrder = call.getInt("screenOrder") else {
+            return call.reject("[AdaptyPlugin] Missing screenOrder argument")
         }
 
-        guard let utf8Str = apns.data(using: .utf8) else {
-            return call.reject("Invalid APNS Token passed")
-        }
+        Adapty.logShowOnboarding(name: name, screenName: screenName, screenOrder: UInt(screenOrder)) { maybeErr in
+            if let error = maybeErr {
+                return call.reject("[AdaptyPlugin] \(error.localizedDescription)", String(error.adaptyErrorCode.rawValue), error.originalError)
+            }
 
-        let base64Encoded = utf8Str.base64EncodedString(options: Data.Base64EncodingOptions(rawValue: 0))
-        Adapty.apnsToken = Data(base64Encoded: base64Encoded)
-        call.resolve()
+            call.resolve()
+        }
     }
 
-    @objc
-    func identify(_ call: CAPPluginCall) {
+    @objc func logShowPaywall(_ call: CAPPluginCall) {
+        guard let paywallData = call.getObject("paywall") else {
+            return call.reject("[AdaptyPlugin] Missing paywall argument")
+        }
+
+        guard let paywall = JSONHelper.decode(AdaptyPaywall.self, from: paywallData) else {
+            return call.reject("[AdaptyPlugin] Invalid paywall argument")
+        }
+
+        Adapty.logShowPaywall(paywall) { maybeErr in
+            if let error = maybeErr {
+                return call.reject("[AdaptyPlugin] \(error.localizedDescription)", String(error.adaptyErrorCode.rawValue), error.originalError)
+            }
+
+            call.resolve()
+        }
+    }
+
+    @objc func setFallbackPaywalls(_ call: CAPPluginCall) {
+        guard let paywallsObj = call.getObject("paywalls") else {
+            return call.reject("[AdaptyPlugin] Missing paywalls argument")
+        }
+
+        guard let paywallsData = try? JSONSerialization.data(withJSONObject: paywallsObj, options: []) else {
+            return call.reject("[AdaptyPlugin] Invalid paywalls argument")
+        }
+
+        Adapty.setFallbackPaywalls(paywallsData) { maybeErr in
+            if let error = maybeErr {
+                return call.reject("[AdaptyPlugin] \(error.localizedDescription)", String(error.adaptyErrorCode.rawValue), error.originalError)
+            }
+
+            call.resolve()
+        }
+    }
+
+    @objc func getProfile(_ call: CAPPluginCall) {
+        Adapty.getProfile { result in
+            switch result {
+            case let .success(profile):
+                call.resolve(JSONHelper.encode(profile))
+            case let .failure(error):
+                call.reject("[AdaptyPlugin] \(error.localizedDescription)", String(error.adaptyErrorCode.rawValue), error.originalError)
+            }
+        }
+    }
+
+    @objc func identify(_ call: CAPPluginCall) {
         guard let customerUserId = call.getString("customerUserId") else {
-            return call.reject("Missing customerUserId option")
+            return call.reject("[AdaptyPlugin] Missing customerUserId argument")
         }
-        Adapty.identify(customerUserId) { error in
-            if let error = error {
-                return call.reject(error.localizedDescription, String(error.adaptyErrorCode.rawValue), error.originalError)
-            }
-            call.resolve()
-        }
-    }
 
-    @objc
-    func getCustomerUserId(_ call: CAPPluginCall) {
-        call.resolve([
-            "customerUserId": Adapty.customerUserId as Any,
-        ])
-    }
-
-    @objc
-    func logout(_ call: CAPPluginCall) {
-        Adapty.logout { error in
-            if let error = error {
-                return call.reject(error.localizedDescription, String(error.adaptyErrorCode.rawValue), error.originalError)
+        Adapty.identify(customerUserId) { maybeErr in
+            if let error = maybeErr {
+                return call.reject("[AdaptyPlugin] \(error.localizedDescription)", String(error.adaptyErrorCode.rawValue), error.originalError)
             }
 
             call.resolve()
         }
     }
 
-    @objc
-    func updateProfile(_ call: CAPPluginCall) {
-        let params = ProfileParameterBuilder()
-
-        if let email = call.getString("email") {
-            _ = params.withEmail(email)
-        }
-        if let phoneNumber = call.getString("phoneNumber") {
-            _ = params.withPhoneNumber(phoneNumber)
-        }
-        if let facebookUserId = call.getString("facebookUserId") {
-            _ = params.withFacebookUserId(facebookUserId)
-        }
-        if let facebookAnonymousId = call.getString("facebookAnonymousId") {
-            _ = params.withFacebookAnonymousId(facebookAnonymousId)
-        }
-        if let amplitudeUserId = call.getString("amplitudeUserId") {
-            _ = params.withAmplitudeUserId(amplitudeUserId)
-        }
-        if let amplitudeDeviceId = call.getString("amplitudeDeviceId") {
-            _ = params.withAmplitudeDeviceId(amplitudeDeviceId)
-        }
-        if let mixpanelUserId = call.getString("mixpanelUserId") {
-            _ = params.withMixpanelUserId(mixpanelUserId)
-        }
-        if let appmetricaProfileId = call.getString("appmetricaProfileId") {
-            _ = params.withAppmetricaProfileId(appmetricaProfileId)
-        }
-        if let appmetricaDeviceId = call.getString("appmetricaDeviceId") {
-            _ = params.withAppmetricaDeviceId(appmetricaDeviceId)
-        }
-        if let firstName = call.getString("firstName") {
-            _ = params.withFirstName(firstName)
-        }
-        if let lastName = call.getString("lastName") {
-            _ = params.withLastName(lastName)
-        }
-        if let gender = call.getString("gender") {
-            switch gender {
-            case "male": _ = params.withGender(Gender.male)
-            case "female": _ = params.withGender(Gender.female)
-            default: _ = params.withGender(Gender.other)
-            }
-        }
-        if let birthdayStr = call.getString("birthday") {
-            let dateFormatter = DateFormatter()
-            dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
-
-            if let birthday = dateFormatter.date(from: birthdayStr) {
-                _ = params.withBirthday(birthday)
-            }
-        }
-
-        if let customObj = call.getObject("customAttributes") as NSDictionary? ?? nil {
-            var customAttributes: [String: AnyObject] = [:]
-
-            let keys = customObj.allKeys.compactMap { $0 as? String }
-            for key in keys {
-                let keyValue = customObj.value(forKey: key) as AnyObject
-                customAttributes[key] = keyValue
+    @objc func logout(_ call: CAPPluginCall) {
+        Adapty.logout { maybeErr in
+            if let error = maybeErr {
+                return call.reject("[AdaptyPlugin] \(error.localizedDescription)", String(error.adaptyErrorCode.rawValue), error.originalError)
             }
 
-            _ = params.withCustomAttributes(customAttributes)
-        }
-
-        Adapty.updateProfile(params: params) { error in
-            if let error = error {
-                return call.reject(error.localizedDescription, String(error.adaptyErrorCode.rawValue), error.originalError)
-            }
             call.resolve()
         }
     }
 
-    @objc
-    func presentCodeRedemptionSheet(_ call: CAPPluginCall) {
+    @objc func updateProfile(_ call: CAPPluginCall) {
+        guard let paramsData = call.getObject("params") else {
+            return call.reject("[AdaptyPlugin] Missing params argument")
+        }
+
+        guard let params = JSONHelper.decode(AdaptyProfileParameters.self, from: paramsData) else {
+            return call.reject("[AdaptyPlugin] Invalid params argument")
+        }
+
+        Adapty.updateProfile(params: params) { maybeErr in
+            if let error = maybeErr {
+                return call.reject("[AdaptyPlugin] \(error.localizedDescription)", String(error.adaptyErrorCode.rawValue), error.originalError)
+            }
+
+            call.resolve()
+        }
+    }
+
+    @objc func makePurchase(_ call: CAPPluginCall) {
+        guard let productObj = call.getObject("product") else {
+            return call.reject("[AdaptyPlugin] Missing product argument")
+        }
+
+        guard let productData = try? JSONSerialization.data(withJSONObject: productObj, options: []) else {
+            return call.reject("[AdaptyPlugin] Invalid product argument")
+        }
+
+        Adapty.getPaywallProduct(from: JSONHelper.jsonDecoder, data: productData) { skProduct in
+            switch skProduct {
+            case let .failure(error):
+                return call.reject("[AdaptyPlugin] \(error.localizedDescription)", String(error.adaptyErrorCode.rawValue), error.originalError)
+            case let .success(product):
+                Adapty.makePurchase(product: product) { result in
+                    switch result {
+                    case let .success(profile):
+                        call.resolve(JSONHelper.encode(PurchasedInfo(profile: profile.profile, transaction: profile.transaction)))
+                    case let .failure(error):
+                        call.reject("[AdaptyPlugin] \(error.localizedDescription)", String(error.adaptyErrorCode.rawValue), error.originalError)
+                    }
+                }
+            }
+        }
+    }
+
+    @objc func presentCodeRedemptionSheet(_ call: CAPPluginCall) {
         Adapty.presentCodeRedemptionSheet()
         call.resolve()
     }
 
-    @objc
-    func setVariationID(_ call: CAPPluginCall) {
-        guard let variationId = call.getString("variationId") else {
-            return call.reject("Missing variationId option")
-        }
-        guard let transactionId = call.getString("transactionId") else {
-            return call.reject("Missing transactionId option")
-        }
-
-        Adapty.setVariationId(variationId, forTransactionId: transactionId) { error in
-            if let error = error {
-                return call.reject(error.localizedDescription, String(error.adaptyErrorCode.rawValue), error.originalError)
+    @objc func restorePurchases(_ call: CAPPluginCall) {
+        Adapty.restorePurchases { result in
+            switch result {
+            case let .success(profile):
+                call.resolve(JSONHelper.encode(profile))
+            case let .failure(error):
+                call.reject("[AdaptyPlugin] \(error.localizedDescription)", String(error.adaptyErrorCode.rawValue), error.originalError)
             }
-            call.resolve()
         }
     }
 
-    @objc
-    func getPromo(_ call: CAPPluginCall) {
-        Adapty.getPromo { promo, error in
-            if let error = error {
-                return call.reject(error.localizedDescription, String(error.adaptyErrorCode.rawValue), error.originalError)
-            }
-
-            if let paywall = promo?.paywall {
-                self.cachePromoPaywalls(paywall)
-                self.cachePromoProducts(paywall.products)
-            }
-
-            call.resolve(encodeJson(from: promo))
+    @objc func setLogLevel(_ call: CAPPluginCall) {
+        guard let logLevelString = call.getString("logLevel") else {
+            return call.reject("[AdaptyPlugin] Missing logLevel argument")
         }
+
+        let logLevel = AdaptyLogLevel(from: logLevelString)
+
+        Adapty.logLevel = logLevel
+        call.resolve()
     }
 
-    @objc
-    func restorePurchases(_ call: CAPPluginCall) {
-        Adapty.restorePurchases { purchaserInfo, receipt, _, error in
-            if let error = error {
-                return call.reject(error.localizedDescription, String(error.adaptyErrorCode.rawValue), error.originalError)
-            }
+    // @objc func setVariationId(_ call: CAPPluginCall) {
+    //     guard let variationId = call.getString("variationId") else {
+    //         return call.reject("[AdaptyPlugin] Missing variationId argument")
+    //     }
 
-            let result = RestorePurchasesResult(purchaserInfo: purchaserInfo,
-                                                receipt: receipt)
-            call.resolve(encodeJson(from: result))
+    //     guard let transactionId = call.getString("transactionId") else {
+    //         return call.reject("[AdaptyPlugin] Missing transactionId argument")
+    //     }
+
+    //     Adapty.setVariationId(variationId, forPurchasedTransaction: transactionId) { maybeErr in
+    //         if let err = maybeErr {
+    //             return call.reject("[AdaptyPlugin] \(err.localizedDescription)", nil, err)
+    //         }
+
+    //         call.resolve()
+    //     }
+    // }
+
+    public func didLoadLatestProfile(_ profile: AdaptyProfile) {
+        if !hasListeners(EventName.onLatestProfileLoad.rawValue) {
+            return
         }
+
+        let body = JSONHelper.encode(profile)
+
+        notifyListeners(EventName.onLatestProfileLoad.rawValue, data: body, retainUntilConsumed: true)
+    }
+}
+
+struct PurchasedInfo: Encodable {
+    let profile: AdaptyProfile
+    let transaction: CodableSKPaymentTransaction
+
+    init(profile: AdaptyProfile, transaction: SKPaymentTransaction) {
+        self.profile = profile
+        self.transaction = CodableSKPaymentTransaction(transaction: transaction)
+    }
+}
+
+struct CodableSKPayment: Codable {
+    let productIdentifier: String
+    let quantity: Int
+    let requestData: Data?
+    let applicationUsername: String?
+    let simulatesAskToBuyInSandbox: Bool
+
+    init(payment: SKPayment) {
+        productIdentifier = payment.productIdentifier
+        quantity = payment.quantity
+        requestData = payment.requestData
+        applicationUsername = payment.applicationUsername
+        simulatesAskToBuyInSandbox = payment.simulatesAskToBuyInSandbox
+    }
+}
+
+class CodableSKPaymentTransaction: Codable {
+    let errorDescription: String?
+    let original: CodableSKPaymentTransaction?
+    let payment: CodableSKPayment
+    let transactionDate: Date?
+    let transactionIdentifier: String?
+    let transactionState: SKPaymentTransactionState.RawValue // RawValue because SKPaymentTransactionState doesn't conform to Codable
+
+    init(transaction: SKPaymentTransaction) {
+        errorDescription = transaction.error?.localizedDescription
+        if let originalTransaction = transaction.original {
+            original = CodableSKPaymentTransaction(transaction: originalTransaction)
+        } else {
+            original = nil
+        }
+        payment = CodableSKPayment(payment: transaction.payment)
+        transactionDate = transaction.transactionDate
+        transactionIdentifier = transaction.transactionIdentifier
+        transactionState = transaction.transactionState.rawValue
+    }
+}
+
+public enum JSONHelper {
+    public static var dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .iso8601)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z"
+        formatter.timeZone = TimeZone(abbreviation: "UTC")
+        return formatter
+    }()
+
+    public static var jsonDecoder: JSONDecoder = {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .formatted(dateFormatter)
+        decoder.dataDecodingStrategy = .base64
+        return decoder
+    }()
+
+    public static var jsonEncoder: JSONEncoder = {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .formatted(dateFormatter)
+        encoder.dataEncodingStrategy = .base64
+        return encoder
+    }()
+
+    public static func encode<T: Encodable>(_ value: T) -> [String: Any] {
+        guard let data = try? jsonEncoder.encode(value) else {
+            print("[AdaptyPlugin] — encode", "error encoding")
+
+            return [:]
+        }
+
+        return (try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]) ?? [:]
     }
 
-    @objc
-    func getPurchaseInfo(_ call: CAPPluginCall) {
-        let forceUpdate = call.getBool("forceUpdate") ?? false
-        Adapty.getPurchaserInfo(forceUpdate: forceUpdate) { info, error in
-            if let error = error {
-                return call.reject(error.localizedDescription, String(error.adaptyErrorCode.rawValue), error.originalError)
-            }
-            call.resolve(encodeJson(from: info))
-        }
-    }
-
-    @objc
-    func makePurchase(_ call: CAPPluginCall) {
-        guard let productId = call.getString("productId") else {
-            return call.reject("Missing productId option")
-        }
-        let variationId = call.getString("variationId")
-
-        let offerId = call.getString("offerId")
-
-        guard let product = findProduct(productId: productId, variationId: variationId) else {
-            return call.reject("Product with such ID wasn't found")
-        }
-
-        Adapty.makePurchase(product: product, offerId: offerId) {
-            purchaserInfo, receipt, _, product, error in
-            if let error = error {
-                return call.reject(error.localizedDescription, String(error.adaptyErrorCode.rawValue), error.originalError)
-            }
-
-            let result = MakePurchaseResult(purchaserInfo: purchaserInfo,
-                                            receipt: receipt,
-                                            product: product)
-            return call.resolve(encodeJson(from: result))
-        }
-    }
-
-    private func findProduct(productId: String, variationId: String?) -> ProductModel? {
-        guard let variationId = variationId else {
-            if let anyProduct = products.first(where: { $0.vendorProductId == productId }) {
-                return anyProduct
-            }
-
-            if let anyPromoProduct = promoProducts.first(where: { $0.vendorProductId == productId }) {
-                return anyPromoProduct
-            }
+    public static func decode<T: Decodable>(_ type: T.Type, from json: [String: Any]) -> T? {
+        guard let data = try? JSONSerialization.data(withJSONObject: json, options: []) else {
+            print("[AdaptyPlugin] — decode", "error decoding")
 
             return nil
         }
 
-        let product = findPaywall(variationId: variationId)?.products.first(where: { $0.vendorProductId == productId })
-
-        if product == nil {
-            if let anyProduct = products.first(where: { $0.vendorProductId == productId }) {
-                return anyProduct
-            }
-            if let anyPromoProduct = promoProducts.first(where: { $0.vendorProductId == productId }) {
-                return anyPromoProduct
-            }
-        }
-
-        return product
-    }
-
-    private func findPaywall(variationId: String) -> PaywallModel? {
-        let paywall = paywalls.first(where: { $0.variationId == variationId })
-        if paywall == nil {
-            let promoPaywall = promoPaywalls.first(where: { $0.variationId == variationId })
-            return promoPaywall
-        }
-        return paywall
-    }
-
-    public func didPurchase(product _: ProductModel, purchaserInfo _: PurchaserInfoModel?, receipt _: String?, appleValidationResult _: Parameters?, paywall _: PaywallViewController) {
-        print("[adapty] — DID PURCHASE")
-        notifyListeners("onPurchaseSuccess", data: ["purchase": "success"], retainUntilConsumed: true)
-    }
-
-    public func didFailPurchase(product _: ProductModel, error _: Error, paywall _: PaywallViewController) {
-        print("[adapty] — DID FAIL")
-        notifyListeners("onPurchaseFailed", data: ["purchase": "failed"], retainUntilConsumed: true)
-    }
-
-    public func didReceiveUpdatedPurchaserInfo(_ purchaserInfo: PurchaserInfoModel) {
-        print("[adapty] — DID UPDATE")
-        notifyListeners("onInfoUpdate", data: encodeJson(from: purchaserInfo), retainUntilConsumed: true)
-    }
-
-    public func didReceivePromo(_ promo: PromoModel) {
-        print("[adapty] — onPromoReceived", promo)
-        notifyListeners("onPromoReceived", data: encodeJson(from: promo), retainUntilConsumed: true)
+        return try? jsonDecoder.decode(type, from: data)
     }
 }
 
-func encodeJson<T: Encodable>(from data: T) -> [String: Any] {
-    let encoder = JSONEncoder()
-
-    if let json = try? encoder.encode(data) {
-        do {
-            return try JSONSerialization.jsonObject(with: json, options: []) as? [String: Any] ?? [:]
-        } catch {
-            print("[adapty] — encodeJson", error.localizedDescription, data)
+extension StoreKit2Usage {
+    init(from string: String) {
+        switch string {
+        case "for_intro_eligibility_check":
+            self = .forIntroEligibilityCheck
+        default:
+            self = .disabled
         }
     }
-    return [:]
+}
+
+extension AdaptyLogLevel {
+    init(from string: String) {
+        switch string {
+        case "error":
+            self = .error
+        case "warn":
+            self = .warn
+        case "info":
+            self = .info
+        case "verbose":
+            self = .verbose
+        case "debug":
+            self = .debug
+        default:
+            self = .error
+        }
+    }
 }

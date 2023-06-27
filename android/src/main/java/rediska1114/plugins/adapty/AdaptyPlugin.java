@@ -1,4 +1,4 @@
-package com.rediska1114.plugins.adapty;
+package rediska1114.plugins.adapty;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;

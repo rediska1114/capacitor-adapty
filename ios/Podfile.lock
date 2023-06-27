@@ -1,11 +1,11 @@
 PODS:
-  - Adapty (1.17.7)
-  - Capacitor (3.6.0):
+  - Adapty (2.6.1)
+  - Capacitor (5.0.5):
     - CapacitorCordova
-  - CapacitorCordova (3.6.0)
+  - CapacitorCordova (5.0.5)
 
 DEPENDENCIES:
-  - Adapty (~> 1.17.7)
+  - Adapty (~> 2.6.1)
   - "Capacitor (from `../node_modules/@capacitor/ios`)"
   - "CapacitorCordova (from `../node_modules/@capacitor/ios`)"
 
@@ -20,10 +20,10 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@capacitor/ios"
 
 SPEC CHECKSUMS:
-  Adapty: 7b0d95d78b86df348dd9c488c6955624f671e53a
-  Capacitor: 838de9244464702bc67e3d47e81c471b79500059
-  CapacitorCordova: d4a821a58b9b14452b05c583b0e52379e45810e5
+  Adapty: 8c82cb36d13083d44cad19a48066b947671ab4b4
+  Capacitor: b1248915663add1bd6567e2b67c1c1fa3abcf5e8
+  CapacitorCordova: f8c06b897c74ee8f7701fe10e6443b40822bc83a
 
-PODFILE CHECKSUM: 6ae7ef8b8f9e6b31ae5ee763adcd97360f11c1e1
+PODFILE CHECKSUM: 195e0125d1970f6e045176db286f9050155d3a91
 
-COCOAPODS: 1.10.1
+COCOAPODS: 1.12.1

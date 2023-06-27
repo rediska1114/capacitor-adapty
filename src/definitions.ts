@@ -1,69 +1,85 @@
 import { PluginListenerHandle } from '@capacitor/core';
-import {
-  ActivateOptions,
-  AdaptyPromo,
-  AdaptyPurchaserInfo,
-  GetAPNSTokenResult,
-  GetPaywallsResult,
-  IdentifyOptions,
-  LogShowPaywallOptions,
-  MakePurchaseOptions,
-  MakePurchaseResult,
-  RestorePurchasesResult,
-  GetCustomerUserIdResult,
-  SetAPNSTokenOptions,
-  SetExternalAnalyticsEnabledOptions,
-  SetVariationIDOptions,
-  UpdateAttributionOptions,
-  UpdateProfileOptions,
-  AdaptyDefaultOptions,
-} from './sdk/types';
-
-export type PurchaseSuccessListener = (data: { purchase: 'success' }) => void;
-export type PurchaseFailedListener = (data: { purchase: 'failed' }) => void;
-export type InfoUpdateListener = (data: AdaptyPurchaserInfo) => void;
-export type PromoReceivedListener = (data: AdaptyPromo) => void;
+import * as Models from './sdk/cdk';
 
 export interface AdaptyPlugin {
   activate(options: ActivateOptions): Promise<void>;
-  getPaywalls(options?: AdaptyDefaultOptions): Promise<GetPaywallsResult>;
-  updateAttribution(options: UpdateAttributionOptions): Promise<void>;
-  setExternalAnalyticsEnabled(
-    options: SetExternalAnalyticsEnabledOptions,
-  ): Promise<void>;
-  logShowPaywall(options: LogShowPaywallOptions): Promise<void>;
-  getAPNSToken(): Promise<GetAPNSTokenResult>;
-  setAPNSToken(options: SetAPNSTokenOptions): Promise<void>;
-  identify(options: IdentifyOptions): Promise<void>;
+
+  updateAttribution(options: AttributionOptions): Promise<void>;
+
+  getPaywall(options: {
+    id: string;
+    locale: string;
+  }): Promise<Models.AdaptyPaywall>;
+
+  getPaywallProducts(options: {
+    paywall: Models.AdaptyPaywall;
+  }): Promise<{ products: Models.AdaptyProduct[] }>;
+
+  logShowOnboarding(options: ShowOnboardingOptions): Promise<void>;
+  logShowPaywall(options: { paywall: Models.AdaptyPaywall }): Promise<void>;
+  setFallbackPaywalls(options: { paywalls: any }): Promise<void>;
+  getProfile(): Promise<Models.AdaptyProfile>;
+  identify(options: { customerUserId: string }): Promise<void>;
   logout(): Promise<void>;
-  updateProfile(options: UpdateProfileOptions): Promise<void>;
+  updateProfile(options: {
+    params: Partial<Models.AdaptyProfileParameters>;
+  }): Promise<void>;
+  makePurchase(options: {
+    product: Models.AdaptyProduct;
+  }): Promise<MakePurchaseResult>;
   presentCodeRedemptionSheet(): Promise<void>;
-  setVariationID(options: SetVariationIDOptions): Promise<void>;
-  getPromo(): Promise<AdaptyPromo>;
-  restorePurchases(): Promise<RestorePurchasesResult>;
-  getPurchaseInfo(options?: AdaptyDefaultOptions): Promise<AdaptyPurchaserInfo>;
-  makePurchase(options: MakePurchaseOptions): Promise<MakePurchaseResult>;
-  getCustomerUserId(): Promise<GetCustomerUserIdResult>;
+  restorePurchases(): Promise<Models.AdaptyProfile>;
+  setLogLevel(options: { logLevel: string }): Promise<void>;
 
   addListener(
-    eventName: 'onPurchaseSuccess',
-    listenerFunc: PurchaseSuccessListener,
+    eventName: 'onLatestProfileLoad',
+    listenerFunc: (profile: Models.AdaptyProfile) => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
+}
 
-  addListener(
-    eventName: 'onPurchaseFailed',
-    listenerFunc: PurchaseFailedListener,
-  ): Promise<PluginListenerHandle> & PluginListenerHandle;
+export enum LogLevel {
+  error = 'error',
+  warn = 'warn',
+  info = 'info',
+  verbose = 'verbose',
+  debug = 'debug',
+}
 
-  addListener(
-    eventName: 'onInfoUpdate',
-    listenerFunc: InfoUpdateListener,
-  ): Promise<PluginListenerHandle> & PluginListenerHandle;
+export enum StoreKit2Usage {
+  forIntroEligibilityCheck = 'for_intro_eligibility_check',
+  disabled = 'disabled',
+}
 
-  addListener(
-    eventName: 'onPromoReceived',
-    listenerFunc: PromoReceivedListener,
-  ): Promise<PluginListenerHandle> & PluginListenerHandle;
+export interface ActivateOptions {
+  apiKey: string;
+  customerUserId?: string;
+  logLevel?: LogLevel;
+  libVersion: string;
+  observerMode?: boolean;
+  enableUsageLogs?: boolean;
+  storeKit2Usage?: StoreKit2Usage;
+}
 
-  // TODO remove listeners
+export enum AttributionNetwork {
+  appsflyer = 'appsflyer',
+  adjust = 'adjust',
+  branch = 'branch',
+  custom = 'custom',
+  appleSearchAds = 'apple_search_ads',
+}
+export interface AttributionOptions {
+  attribution: Record<string, any>;
+  source: AttributionNetwork | string;
+  networkUserId?: string;
+}
+
+export interface ShowOnboardingOptions {
+  name?: string;
+  screenName?: string;
+  screenOrder: number;
+}
+
+export interface MakePurchaseResult {
+  profile: Models.AdaptyProfile;
+  transaction?: Models.SKTransaction;
 }
