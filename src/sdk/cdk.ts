@@ -525,22 +525,20 @@ export interface AdaptyProduct {
    */
   readonly vendor_product_id: string;
 
- 
-    /**
-     * An object containing free trial information for the given product.
-     * android only
-     * @see {@link https://developer.android.com/google/play/billing/subscriptions#free-trial}
-     * @readonly
-     */
-    readonly free_trial_period?: AdaptySubscriptionPeriod;
-    /**
-     * The period’s language is determined
-     * by the preferred language set on the device.
-     * android only
-     * @readonly
-     */
-    readonly localized_free_trial_period?: string;
-  
+  /**
+   * An object containing free trial information for the given product.
+   * android only
+   * @see {@link https://developer.android.com/google/play/billing/subscriptions#free-trial}
+   * @readonly
+   */
+  readonly free_trial_period?: AdaptySubscriptionPeriod;
+  /**
+   * The period’s language is determined
+   * by the preferred language set on the device.
+   * android only
+   * @readonly
+   */
+  readonly localized_free_trial_period?: string;
 
   /**
    * An array of subscription offers available for the auto-renewable subscription.
@@ -691,18 +689,18 @@ export enum SKPaymentTransactionState {
   deferred = 4, // The transaction is in the queue, but its final status is pending external action.
 }
 export interface SKPayment {
-  product_identifier: string;
+  productIdentifier: string;
   quantity: number;
-  request_data: string;
-  application_username?: string;
-  simulates_ask_to_buy_in_sandbox: boolean;
+  requestData: string;
+  applicationUsername?: string;
+  simulatesAskToBuyInSandbox: boolean;
 }
 
 export interface SKTransaction {
-  error_description: string;
-  original?: SKTransaction;
+  errorDescription: string;
+  original?: Omit<SKTransaction, 'original'>;
   payment: SKPayment;
-  transaction_date: string;
-  transaction_identifier: string;
-  transaction_state: SKPaymentTransactionState;
+  transactionDate: string;
+  transactionIdentifier: string;
+  transactionState: SKPaymentTransactionState;
 }
