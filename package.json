@@ -1,6 +1,6 @@
 {
   "name": "capacitor-adapty",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "description": "Adapty plugin for capacitor",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
