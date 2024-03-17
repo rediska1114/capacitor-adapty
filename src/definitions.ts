@@ -46,7 +46,6 @@ export interface ActivateOptions {
   logLevel?: Models.LogLevel;
   libVersion: string;
   observerMode?: boolean;
-  storeKit2Usage?: Models.StoreKit2Usage;
   idfaCollectionDisabled?: boolean;
 }
 

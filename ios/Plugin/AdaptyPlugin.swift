@@ -26,9 +26,6 @@ public class AdaptyPlugin: CAPPlugin, AdaptyDelegate {
     let observerMode = call.getBool("observerMode", false)
     let idfaCollectionDisabled = call.getBool("idfaCollectionDisabled", false)
 
-    let storeKit2UsageString = call.getString("storeKit2Usage")
-    let storeKit2Usage = StoreKit2Usage(from: storeKit2UsageString)
-
     guard let libVersion = call.getString("libVersion") else {
       return call.reject("[AdaptyPlugin] Missing libVersion argument")
     }
@@ -43,8 +40,7 @@ public class AdaptyPlugin: CAPPlugin, AdaptyDelegate {
     Adapty.activate(
       apiKey,
       observerMode: observerMode,
-      customerUserId: customerUserId,
-      storeKit2Usage: storeKit2Usage
+      customerUserId: customerUserId
     ) { result in
       switch result {
       case .none:
@@ -265,7 +261,7 @@ public class AdaptyPlugin: CAPPlugin, AdaptyDelegate {
     guard let paramsData = call.getObject("params") else {
       return call.reject("[AdaptyPlugin] Missing params argument")
     }
-      
+
     print("updateProfile", paramsData)
 
     guard let params = JSONHelper.decode(AdaptyProfileParameters.self, from: paramsData) else {
@@ -467,19 +463,6 @@ public enum JSONHelper {
     }
 
     return try? jsonDecoder.decode(type, from: data)
-  }
-}
-
-extension StoreKit2Usage {
-  init(from string: String?) {
-    switch string {
-    case "for_intro_eligibility_check":
-      self = .forIntroEligibilityCheck
-    case "disabled":
-      self = .disabled
-    default:
-      self = .default
-    }
   }
 }
 

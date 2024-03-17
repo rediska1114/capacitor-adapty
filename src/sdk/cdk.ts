@@ -67,13 +67,6 @@ export const LogLevel = Object.freeze({
 });
 export type LogLevel = typeof LogLevel[keyof typeof LogLevel];
 
-export const StoreKit2Usage = Object.freeze({
-  forIntroEligibilityCheck: 'for_intro_eligibility_check',
-  disabled: 'disabled',
-  default: 'default',
-});
-export type StoreKit2Usage = typeof StoreKit2Usage[keyof typeof StoreKit2Usage];
-
 export const PaywallFetchPolicy = Object.freeze({
   returnCacheDataElseLoad: 'return_cache_data_else_load',
   reloadRevalidatingCacheData: 'reload_revalidating_cache_data',
