@@ -1,36 +1,70 @@
-import { registerPlugin } from '@capacitor/core';
+import { PluginListenerHandle, registerPlugin } from '@capacitor/core';
 import type * as Models from './sdk/cdk';
 import type {
   ActivateOptions,
   AdaptyPlugin,
-  AttributionNetwork,
-  MakePurchaseResult,
+  GetPaywallOptions,
 } from './definitions';
-import { VERSION } from './version';
-
-const libVersion = VERSION;
+import { decodePaywall, encodePaywall } from './sdk/coders/paywall';
+import { decodeProduct, encodeProduct } from './sdk/coders/product';
+import { decodeProfile } from './sdk/coders/profile';
+import { encodeProfileParameters } from './sdk/coders/profile-parameters';
+import { decodeSKTransaction } from './sdk/coders/sk-transaction';
+import { PromiseQueue } from './promise-queue';
 
 const CapacitorAdapty = registerPlugin<AdaptyPlugin>('Adapty', {});
+
+const LIB_VERSION = import.meta.env.PUBLIC_VERSION;
 
 export class Adapty {
   private adapty = CapacitorAdapty;
 
-  activate(
+  private resolveActivation: ((value: void) => void) | null = null;
+  private activatingPromise: Promise<void> | null = new Promise(
+    resolve => (this.resolveActivation = resolve),
+  );
+
+  private async awaitActivation() {
+    if (this.activatingPromise) {
+      await this.activatingPromise;
+      this.activatingPromise = null;
+    }
+  }
+
+  // https://github.com/adaptyteam/AdaptySDK-React-Native/issues/66#issuecomment-1521638581
+  private mutationalQueue = new PromiseQueue();
+
+  async activate(
     apiKey: string,
     options: Omit<ActivateOptions, 'apiKey' | 'libVersion'>,
   ) {
-    return this.adapty.activate({
+    const promise = this.adapty.activate({
       apiKey,
-      libVersion,
+      libVersion: LIB_VERSION,
       ...options,
     });
+
+    if (!this.activatingPromise) {
+      this.activatingPromise = promise;
+    }
+
+    const result = await promise;
+
+    if (this.resolveActivation) {
+      this.resolveActivation();
+      this.resolveActivation = null;
+    }
+
+    return result;
   }
 
-  updateAttribution(
-    source: AttributionNetwork | string,
+  async updateAttribution(
+    source: Models.AttributionNetwork | string,
     attribution: Record<string, any>,
     networkUserId?: string,
   ) {
+    await this.awaitActivation();
+
     return this.adapty.updateAttribution({
       source,
       attribution,
@@ -38,61 +72,140 @@ export class Adapty {
     });
   }
 
-  getPaywall(id: string, locale: string): Promise<Models.AdaptyPaywall> {
-    return this.adapty.getPaywall({ id, locale });
-  }
+  async getPaywall(
+    placementId: string,
+    locale: string,
+    options?: Partial<Omit<GetPaywallOptions, 'placementId' | 'locale'>>,
+  ): Promise<Models.AdaptyPaywall> {
+    await this.awaitActivation();
 
-  getPaywallProducts(
-    paywall: Models.AdaptyPaywall,
-  ): Promise<Models.AdaptyProduct[]> {
     return this.adapty
-      .getPaywallProducts({ paywall })
-      .then(res => res.products);
+      .getPaywall({ placementId, locale, ...options })
+      .then(res => decodePaywall(res.paywall));
   }
 
-  logShowOnboarding(
+  async getPaywallProducts(
+    paywall: Models.AdaptyPaywall,
+  ): Promise<Models.AdaptyPaywallProduct[]> {
+    await this.awaitActivation();
+
+    return this.adapty
+      .getPaywallProducts({ paywall: encodePaywall(paywall) })
+      .then(res => res.products.map(decodeProduct));
+  }
+
+  async getProductsIntroductoryOfferEligibility(
+    vendorProductIds: string[],
+  ): Promise<Record<string, Models.OfferEligibility>> {
+    await this.awaitActivation();
+
+    return this.adapty
+      .getProductsIntroductoryOfferEligibility({
+        vendorProductIds,
+      })
+      .then(res => res.eligibilities);
+  }
+
+  async logShowOnboarding(
     screenOrder: number,
     screenName?: string,
     name?: string,
   ): Promise<void> {
+    await this.awaitActivation();
+
     return this.adapty.logShowOnboarding({ screenOrder, screenName, name });
   }
 
-  logShowPaywall(paywall: Models.AdaptyPaywall): Promise<void> {
-    return this.adapty.logShowPaywall({ paywall });
+  async logShowPaywall(paywall: Models.AdaptyPaywall): Promise<void> {
+    await this.awaitActivation();
+
+    return this.adapty.logShowPaywall({ paywall: encodePaywall(paywall) });
   }
 
-  setFallbackPaywalls(paywalls: any): Promise<void> {
+  async setFallbackPaywalls(paywalls: any): Promise<void> {
+    await this.awaitActivation();
     return this.adapty.setFallbackPaywalls({ paywalls });
   }
 
-  getProfile = this.adapty.getProfile;
-
-  identify(customerUserId: string): Promise<void> {
-    return this.adapty.identify({ customerUserId });
+  async getProfile(): Promise<Models.AdaptyProfile> {
+    await this.awaitActivation();
+    return this.adapty.getProfile().then(res => decodeProfile(res.profile));
   }
 
-  logout = this.adapty.logout;
+  async identify(customerUserId: string): Promise<void> {
+    await this.awaitActivation();
+    return this.mutationalQueue.enqueue(() =>
+      this.adapty.identify({ customerUserId }),
+    );
+  }
 
-  updateProfile(
+  async logout() {
+    await this.awaitActivation();
+    return this.mutationalQueue.enqueue(() => this.adapty.logout());
+  }
+
+  async updateProfile(
     params: Partial<Models.AdaptyProfileParameters>,
   ): Promise<void> {
-    return this.adapty.updateProfile({ params });
+    await this.awaitActivation();
+
+    return this.mutationalQueue.enqueue(() =>
+      this.adapty.updateProfile({
+        params: encodeProfileParameters(params),
+      }),
+    );
   }
 
-  makePurchase(product: Models.AdaptyProduct): Promise<MakePurchaseResult> {
-    return this.adapty.makePurchase({ product });
+  async makePurchase(
+    product: Models.AdaptyPaywallProduct,
+  ): Promise<Models.AdaptyPurchasedInfo> {
+    await this.awaitActivation();
+
+    return this.adapty
+      .makePurchase({ product: encodeProduct(product) })
+      .then(res => ({
+        profile: decodeProfile(res.purchase.profile),
+        transaction: res.purchase.transaction
+          ? decodeSKTransaction(res.purchase.transaction)
+          : undefined,
+      }));
   }
 
-  presentCodeRedemptionSheet = this.adapty.presentCodeRedemptionSheet;
+  async presentCodeRedemptionSheet() {
+    await this.awaitActivation();
 
-  restorePurchases = this.adapty.restorePurchases;
+    return this.adapty.presentCodeRedemptionSheet();
+  }
 
-  setLogLevel(logLevel: string): Promise<void> {
+  async restorePurchases(): Promise<Models.AdaptyProfile> {
+    await this.awaitActivation();
+
+    return this.adapty
+      .restorePurchases()
+      .then(res => decodeProfile(res.profile));
+  }
+
+  async setLogLevel(logLevel: Models.LogLevel): Promise<void> {
+    await this.awaitActivation();
+
     return this.adapty.setLogLevel({ logLevel });
   }
 
-  addListener = this.adapty.addListener;
+  addListener(
+    eventName: 'onLatestProfileLoad',
+    listenerFunc: (data: { profile: Models.AdaptyProfile }) => void,
+  ): PluginListenerHandle & Promise<PluginListenerHandle>;
+
+  addListener(eventName: string, listenerFunc: (...args: any[]) => void) {
+    {
+      switch (eventName) {
+        case 'onLatestProfileLoad':
+          return this.adapty.addListener(eventName, data =>
+            listenerFunc({ profile: decodeProfile(data.profile) }),
+          );
+      }
+    }
+  }
 }
 
 export * from './definitions';

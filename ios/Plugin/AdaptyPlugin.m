@@ -14,6 +14,7 @@ CAP_PLUGIN(AdaptyPlugin, "Adapty",
            CAP_PLUGIN_METHOD(getProfile, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(identify, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(logout, CAPPluginReturnPromise);
+           CAP_PLUGIN_METHOD(getProductsIntroductoryOfferEligibility, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(updateProfile, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(presentCodeRedemptionSheet, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(restorePurchases, CAPPluginReturnPromise);

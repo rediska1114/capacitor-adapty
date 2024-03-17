@@ -1,49 +1,131 @@
-export enum VendorStore {
-  AppStore = 'app_store',
-  PlayStore = 'play_store',
-  Adapty = 'adapty',
-}
+export const VendorStore = Object.freeze({
+  AppStore: 'app_store',
+  PlayStore: 'play_store',
+  Adapty: 'adapty',
+});
+export type VendorStore = typeof VendorStore[keyof typeof VendorStore];
 
-export enum OfferType {
-  FreeTrial = 'free_trial',
-  PayAsYouGo = 'pay_as_you_go',
-  PayUpFront = 'pay_up_front',
-}
+export const OfferType = Object.freeze({
+  FreeTrial: 'free_trial',
+  PayAsYouGo: 'pay_as_you_go',
+  PayUpFront: 'pay_up_front',
+  Unknown: 'unknown',
+});
+export type OfferType = typeof OfferType[keyof typeof OfferType];
 
-export enum CancellationReason {
-  VolountarilyCancelled = 'voluntarily_cancelled',
-  BillingError = 'billing_error',
-  Refund = 'refund',
-  PriceIncrease = 'price_increase',
-  ProductWasNotAvailable = 'product_was_not_available',
-  Unknown = 'unknown',
-}
+export const CancellationReason = Object.freeze({
+  VolountarilyCancelled: 'voluntarily_cancelled',
+  BillingError: 'billing_error',
+  Refund: 'refund',
+  PriceIncrease: 'price_increase',
+  ProductWasNotAvailable: 'product_was_not_available',
+  Unknown: 'unknown',
+});
+export type CancellationReason =
+  typeof CancellationReason[keyof typeof CancellationReason];
 
-export enum Gender {
-  Female = 'f',
-  Male = 'm',
-  Other = 'o',
-}
+export const Gender = Object.freeze({
+  Female: 'f',
+  Male: 'm',
+  Other: 'o',
+});
+export type Gender = typeof Gender[keyof typeof Gender];
 
-export enum AppTrackingTransparencyStatus {
-  NotDetermined = 'not_determined',
-  Restricted = 'restricted',
-  Denied = 'denied',
-  Authorized = 'authorized',
-  Unknown = 'unknown',
-}
+export const AppTrackingTransparencyStatus = Object.freeze({
+  NotDetermined: 0,
+  Restricted: 1,
+  Denied: 2,
+  Authorized: 3,
+  Unknown: 4,
+});
+export type AppTrackingTransparencyStatus =
+  typeof AppTrackingTransparencyStatus[keyof typeof AppTrackingTransparencyStatus];
 
-export enum ProductPeriod {
-  Day = 'day',
-  Week = 'week',
-  Month = 'month',
-  Year = 'year',
-}
+export const ProductPeriod = Object.freeze({
+  Day: 'day',
+  Week: 'week',
+  Month: 'month',
+  Year: 'year',
+  Unknown: 'unknown',
+});
+export type ProductPeriod = typeof ProductPeriod[keyof typeof ProductPeriod];
 
-export enum OfferEligibility {
-  Eligible = 'eligible',
-  Ineligible = 'ineligible',
-  Unknown = 'unknown',
+export const OfferEligibility = Object.freeze({
+  Eligible: 'eligible',
+  Ineligible: 'ineligible',
+  NotApplicable: 'not_applicable',
+});
+export type OfferEligibility =
+  typeof OfferEligibility[keyof typeof OfferEligibility];
+
+export const LogLevel = Object.freeze({
+  error: 'error',
+  warn: 'warn',
+  info: 'info',
+  verbose: 'verbose',
+  debug: 'debug',
+});
+export type LogLevel = typeof LogLevel[keyof typeof LogLevel];
+
+export const StoreKit2Usage = Object.freeze({
+  forIntroEligibilityCheck: 'for_intro_eligibility_check',
+  disabled: 'disabled',
+  default: 'default',
+});
+export type StoreKit2Usage = typeof StoreKit2Usage[keyof typeof StoreKit2Usage];
+
+export const PaywallFetchPolicy = Object.freeze({
+  returnCacheDataElseLoad: 'return_cache_data_else_load',
+  reloadRevalidatingCacheData: 'reload_revalidating_cache_data',
+  default: 'default',
+});
+export type PaywallFetchPolicy =
+  typeof PaywallFetchPolicy[keyof typeof PaywallFetchPolicy];
+
+export const AttributionNetwork = Object.freeze({
+  appsflyer: 'appsflyer',
+  adjust: 'adjust',
+  branch: 'branch',
+  custom: 'custom',
+  appleSearchAds: 'apple_search_ads',
+});
+export type AttributionNetwork =
+  typeof AttributionNetwork[keyof typeof AttributionNetwork];
+
+export const SKPaymentTransactionState = Object.freeze({
+  purchasing: 0, // Transaction is being added to the server queue.
+  purchased: 1, // Transaction is in queue, user has been charged.  Client should complete the transaction.
+  failed: 2, // Transaction was cancelled or failed before being added to the server queue.
+  restored: 3, // Transaction was restored from user's purchase history.  Client should complete the transaction.
+  deferred: 4, // The transaction is in the queue, but its final status is pending external action.
+});
+
+export type SKPaymentTransactionState =
+  typeof SKPaymentTransactionState[keyof typeof SKPaymentTransactionState];
+
+export interface AdaptyPrice {
+  /**
+   * Price as number
+   */
+  amount: number;
+  /**
+   * The currency code of the locale
+   * used to format the price of the product.
+   * The ISO 4217 (USD, EUR).
+   */
+  currencyCode?: string;
+  /**
+   * The currency symbol of the locale
+   * used to format the price of the product.
+   * ($, €).
+   */
+  currencySymbol?: string;
+  /**
+   * A price’s language is determined
+   * by the preferred language set on the device.
+   * On Android, the formatted price from Google Play as is.
+   */
+  localizedString?: string;
 }
 
 /**
@@ -56,384 +138,403 @@ export interface AdaptyPaywall {
    * Parent A/B test name.
    * @readonly
    */
-
-  readonly ab_test_name: string;
+  abTestName: string;
   /**
-   * ID of a paywall configured in Adapty Dashboard.
+   * ID of a placement configured in Adapty Dashboard.
    * @readonly
    */
-  readonly id: string;
+  placementId: string;
   /**
    * Identifier of a paywall locale.
    * @readonly
    */
-  readonly locale: string;
+  locale: string;
+  /**
+   * If `true`, it is possible to fetch the view object
+   * and use it with AdaptyUI library.
+   */
+  hasViewConfiguration: boolean;
+
   /**
    * A paywall name.
    * @readonly
    */
-  readonly name?: string;
-  /**
-   * A custom dictionary configured in Adapty Dashboard for this paywall.
-   * @readonly
-   */
-  readonly remote_config?: Record<string, any>;
+  name: string;
   /**
    * A custom JSON string configured in Adapty Dashboard for this paywall.
    * @readonly
    */
-  readonly remote_config_string?: string;
+  remoteConfig?: string;
   /**
    * Current revision (version) of a paywall.
    * Every change within a paywall creates a new revision.
    * @readonly
    */
-  readonly revision: number;
+  revision: number;
   /**
    * An identifier of a variation,
    * used to attribute purchases to this paywall.
    * @readonly
    */
-  readonly variation_id: string;
+  variationId: string;
   /**
-   * Array of related products ids.
+   * Array of initial products info
    * @readonly
    */
-  readonly products: AdaptyPaywallProduct[];
+  products: ProductReference[];
+
+  instanceIdentity: string;
+  version: number;
 }
+
 /**
- * Describes an object that represents a user profile,
- * including subscriptions and consumables.
+ * Interface representing a user profile in Adapty,
+ * including details about the user's subscriptions and consumable products.
  * @public
  */
 export interface AdaptyProfile {
   /**
-   * The keys are access level identifiers configured by you in Adapty Dashboard.
-   * The values can be `null` if the customer has no access levels.
+   * Object that maps access level identifiers (configured by you in Adapty Dashboard)
+   * to the corresponding access level details. The value can be `null`
+   * if the user does not have any access levels.
    * @readonly
    */
-  readonly paid_access_levels?: Record<string, AdaptyAccessLevel>;
+  accessLevels?: Record<string, AdaptyAccessLevel>;
+
+  segmentHash: string;
+
   /**
-   * Previously set user custom attributes with {@link Adapty.updateProfile} method.
+   * Object representing custom attributes set for the user using
+   * the {@link Adapty.updateProfile} method.
    * @readonly
    */
-  readonly custom_attributes: Record<string, any>;
+  customAttributes?: Record<string, any>;
+
   /**
-   * An identifier of a user in your system.
+   * The identifier for a user in your system.
    * @readonly
    */
-  readonly customer_user_id?: string;
+  customerUserId?: string;
+
   /**
-   * The keys are product ids from the store.
-   * The values are arrays of information about consumables.
-   * Can be `null` if the customer has no purchases.
+   * Object that maps product ids from the store to an array of
+   * information about the user's non-subscription purchases.
+   * The value can be `null` if the user does not have any purchases.
    * @readonly
    */
-  readonly non_subscriptions?: Record<string, AdaptyNonSubscription[]>;
+  nonSubscriptions?: Record<string, AdaptyNonSubscription[]>;
+
   /**
-   * An identifier of a user in Adapty.
+   * The identifier for a user in Adapty.
    */
-  readonly profile_id: string;
+  profileId: string;
+
   /**
-   * The keys are product ids from a store.
-   * The values are information about subscriptions.
-   * Can be `null` if the customer has no subscriptions.
+   * Object that maps product ids from a store to
+   * information about the user's subscriptions.
+   * The value can be `null` if the user does not have any subscriptions.
    * @readonly
    */
-  readonly subscriptions?: Record<string, AdaptySubscription>;
+  subscriptions?: Record<string, AdaptySubscription>;
 }
 
 /**
- * Current user's access level information.
+ * Interface representing access level details of a user.
  * @public
  */
 export interface AdaptyAccessLevel {
   /**
-   * Time when this access level was activated.
+   * The date and time when the access level was activated.
    * @readonly
    */
-  readonly activated_at: Date;
+  activatedAt: Date;
+
   /**
-   * A type of an active introductory offer.
-   * If the value is not `null`,
-   * it means that the offer was applied during the current subscription period.
+   * Type of active introductory offer, if any.
    * @readonly
    */
-  readonly active_introductory_offer_type?: OfferType;
+  activeIntroductoryOfferType?: OfferType;
+
   /**
-   * An id of active promotional offer.
+   * Identifier of the active promotional offer, if any.
    * @readonly
    */
-  readonly active_promotional_offer_id?: string;
+  activePromotionalOfferId?: string;
+
   /**
-   *  A type of an active promotional offer.
-   * If the value is not `null`,
-   * it means that the offer was applied
-   * during the current subscription period.
+   * Type of the active promotional offer, if any.
    * @readonly
    */
-  readonly active_promotional_offer_type?: OfferType;
+  activePromotionalOfferType?: OfferType;
+
   /**
-   * Time when billing issue was detected.
-   * Subscription can still be active.
-   * Would be set to `null` if a charge is made.
+   * The date and time when a billing issue was detected.
    * @readonly
    */
-  readonly billing_issue_detected_at?: Date;
+  billingIssueDetectedAt?: Date;
+
   /**
-   * A reason why a subscription was cancelled.
+   * The reason for the cancellation of the subscription.
    * @readonly
    */
-  readonly cancellation_reason?: CancellationReason;
+  cancellationReason?: CancellationReason;
+
   /**
-   * Time when the access level will expire.
-   * Could be in the past and could be `null` for lifetime access.
+   * The expiration date of the access level, if applicable.
    * @readonly
    */
-  readonly expires_at?: Date;
+  expiresAt?: Date;
+
   /**
    * Unique identifier of the access level
    * configured by you in Adapty Dashboard.
    * @readonly
    */
-  readonly id: string;
+  id: string;
+
   /**
-   * `true` if this access level is active.
-   * Generally, you can check this property to determine
-   * whether a user has an access to premium features.
+   * Flag indicating whether the access level is currently active.
    * @readonly
    */
-  readonly is_active: boolean;
+  isActive: boolean;
+
   /**
-   * `true` if this auto-renewable subscription is in the grace period.
+   * Flag indicating whether this auto-renewable subscription is in the grace period.
    * @readonly
    */
-  readonly is_in_grace_period: boolean;
+  isInGracePeriod: boolean;
+
   /**
-   * `true` if this access level is active for a lifetime (no expiration date).
+   * Flag indicating whether this access level is active for a lifetime.
    * @readonly
    */
-  readonly is_lifetime: boolean;
+  isLifetime: boolean;
+
   /**
-   * `true` if this purchase was refunded
+   * Flag indicating whether this purchase was refunded.
    * @readonly
    */
-  readonly is_refund: boolean;
+  isRefund: boolean;
+
   /**
-   * Time when the access level was renewed.
-   * It can be null if the purchase was first in chain
-   *  or it is non-renewing subscription / non-consumable (e.g. lifetime)
+   * The date and time when the access level was renewed.
    * @readonly
    */
-  readonly renewed_at?: Date;
+  renewedAt?: Date;
+
   /**
-   * Time when this access level has started.
-   * Could be in the future.
+   * The start date of this access level.
    * @readonly
    */
-  readonly starts_at?: Date;
+  startsAt?: Date;
+
   /**
-   * A store of the purchase that unlocked this access level.
+   * The store where the purchase that unlocked this access level was made.
    * @readonly
    */
-  readonly store: VendorStore;
+  store: VendorStore;
+
   /**
-   * Time when the auto-renewable subscription was cancelled.
-   * Subscription can still be active,
-   * it just means that auto-renewal turned off.
-   * Will be set to `null` if the user reactivates the subscription.
+   * The date and time when the auto-renewable subscription was cancelled.
    * @readonly
    */
-  readonly unsubscribed_at?: Date;
+  unsubscribedAt?: Date;
+
   /**
-   * An identifier of a product in a store that unlocked this access level.
+   * The identifier of the product in the store that unlocked this access level.
    * @readonly
    */
-  readonly vendor_product_id: string;
+  vendorProductId: string;
+
   /**
-   * `true` if this auto-renewable subscription is set to renew.
+   * Flag indicating whether this auto-renewable subscription is set to renew.
    * @readonly
    */
-  readonly will_renew: boolean;
+  willRenew: boolean;
+
+  android?: {
+    offerId?: string;
+  };
 }
 
 /**
- * Current user's consumable/non-subscription purchase.
+ * Interface representing a consumable or non-subscription purchase made by the user.
  * @public
  */
 export interface AdaptyNonSubscription {
   /**
-   * `true` if the product is consumable.
+   * Flag indicating whether the product is consumable.
    * @readonly
    */
-  readonly is_consumable: boolean;
+  isConsumable: boolean;
+
   /**
-   * true if the purchase was refunded.
-   */
-  readonly is_refund: boolean;
-  /**
-   * `true` if the product was purchased in sandbox environment
+   * Flag indicating whether the purchase was refunded.
    * @readonly
    */
-  readonly is_sandbox: boolean;
+  isRefund: boolean;
+
+  /**
+   * Flag indicating whether the product was purchased in a sandbox environment.
+   * @readonly
+   */
+  isSandbox: boolean;
+
+  /**
+   * The date and time when the purchase was made.
+   * @readonly
+   */
+  purchasedAt: Date;
+
+  /**
+   * The identifier of the product in the store that was purchased.
+   * @readonly
+   */
+  vendorProductId: string;
+  /**
+   * The identifier of the product in the store that was purchased.
+   * @readonly
+   */
+  vendorTransactionId?: string;
+
+  /**
+   * The store where the purchase was made.
+   * @readonly
+   */
+  store: VendorStore;
+
   /**
    * An identifier of the purchase in Adapty.
-   * You can use it to ensure that you’ve already processed this purchase
+   * You can use it to ensure that you've already processed this purchase
    * (for example tracking one time products).
    * @readonly
    */
-  readonly purchase_id: string;
-  /**
-   * Date when the product was purchased.
-   * @readonly
-   */
-  readonly purchased_at: Date;
-  /**
-   * A store of the purchase
-   * @readonly
-   */
-  readonly store: VendorStore;
-  /**
-   * An identifier of a product in a store
-   * that unlocked this subscription.
-   * @readonly
-   */
-  readonly vendor_product_id: String;
-  /**
-   * A transaction id of a purchase in a store
-   * that unlocked this subscription.
-   * @readonly
-   */
-  readonly vendor_transaction_id?: string;
+  purchaseId: string;
 }
+
 /**
- * Current user's subscription purchase.
+ * Interface representing details about a user's subscription.
  * @public
  */
 export interface AdaptySubscription {
   /**
-   * Time when the subscription was activated.
+   * The date and time when the subscription was activated.
    * @readonly
    */
-  readonly activated_at: Date;
-  /**
-   * A type of an active introductory offer.
-   * If the value is not `null`,
-   * it means that the offer was applied during the current subscription period.
-   * @readonly
-   */
-  readonly active_introductory_offer_type?: OfferType;
-  /**
-   * An id of active promotional offer.
-   * @readonly
-   */
-  readonly active_promotional_offer_id?: string;
-  /**
-   * A type of an active promotional offer.
-   * If the value is not `null`,
-   * it means that the offer was applied during the current subscription period.
-   * @readonly
-   */
-  readonly active_promotional_offer_type?: OfferType;
-  /**
-   * Time when a billing issue was detected. Subscription can still be active.
-   * @readonly
-   */
-  readonly billing_issue_detected_at?: Date;
-  /**
-   * A reason why a subscription was cancelled.
-   * @readonly
-   */
-  readonly cancellation_reason?: CancellationReason;
-  /**
-   * Time when the access level will expire.
-   * Could be in the past and could be `null` for lifetime access.
-   * @readonly
-   */
-  readonly expires_at?: Date;
-  /**
-   * `true` if this subscription is active
-   * @readonly
-   */
-  readonly is_active: boolean;
-  /**
-   * `true` if auto renewable subscription is in grace period
-   * @readonly
-   */
-  readonly is_in_grace_period: boolean;
-  /**
-   * `true` if the subscription is active for lifetime
-   * (no expiration date).
-   */
-  readonly is_lifetime: boolean;
-  /**
-   * `true` if the purchase was refunded
-   * @readonly
-   */
-  readonly is_refund: boolean;
-  /**
-   * `true` if the product was purchased in sandbox enviroment
-   * @readonly
-   */
-  readonly is_sandbox: boolean;
-  /**
-   * Time when the subscription was renewed.
-   * It can be `null` if the purchase was first in chain
-   * or it is non-renewing subscription.
-   * @readonly
-   */
-  readonly renewed_at?: Date;
-  /**
-   * Time when the subscription has started.
-   * Could be in the future.
-   * @readonly
-   */
-  readonly starts_at?: Date;
-  /**
-   * A store of the purchase.
-   * @readonly
-   */
-  readonly store: VendorStore;
-  /**
-   * Time when the auto-renewable subscription was cancelled.
-   * Subscription can still be active,
-   * it means that auto-renewal is turned off.
-   * Would be `null` if a user reactivates the subscription.
-   */
-  readonly unsubscribed_at?: Date;
-  /**
-   * An original transaction id of the purchase
-   * in a store that unlocked this subscription.
-   * For auto-renewable subscription,
-   * this will be an id of the first transaction
-   *  in this subscription.
-   * @readonly
-   */
-  readonly vendor_original_transaction_id: string;
-  /**
-   * An identifier of a product in a store that unlocked this subscription.
-   * @readonly
-   */
-  readonly vendor_product_id: string;
-  /**
-   * A transaction id of a purchase in a store that unlocked this subscription.
-   * @readonly
-   */
-  readonly vendor_transaction_id: string;
-  /**
-   * `true` if the auto-renewable subscription is set to renew
-   * @readonly
-   */
-  readonly will_renew: boolean;
-}
+  activatedAt: Date;
 
-export interface AdaptyPaywallProduct {
   /**
-   * Unique identifier of a product
-   * from App Store Connect or Google Play Console
+   * Type of active introductory offer, if any.
    * @readonly
    */
-  vendor_product_id: string;
+  activeIntroductoryOfferType?: OfferType;
+
+  /**
+   * Identifier of the active promotional offer, if any.
+   * @readonly
+   */
+  activePromotionalOfferId?: string;
+
+  /**
+   * Type of the active promotional offer, if any.
+   * @readonly
+   */
+  activePromotionalOfferType?: OfferType;
+
+  /**
+   * The date and time when a billing issue was detected.
+   * @readonly
+   */
+  billingIssueDetectedAt?: Date;
+
+  /**
+   * The reason for the cancellation of the subscription.
+   * @readonly
+   */
+  cancellationReason?: CancellationReason;
+
+  /**
+   * The expiration date of the subscription, if applicable.
+   * @readonly
+   */
+  expiresAt?: Date;
+
+  /**
+   * Flag indicating whether the subscription is currently active.
+   * @readonly
+   */
+  isActive: boolean;
+
+  /**
+   * Flag indicating whether the subscription is in the grace period.
+   * @readonly
+   */
+  isInGracePeriod: boolean;
+
+  /**
+   * Flag indicating whether the subscription is set for a lifetime.
+   * @readonly
+   */
+  isLifetime: boolean;
+
+  /**
+   * Flag indicating whether the subscription was refunded.
+   * @readonly
+   */
+  isRefund: boolean;
+
+  /**
+   * Flag indicating whether the subscription was purchased in a sandbox environment.
+   * @readonly
+   */
+  isSandbox: boolean;
+
+  /**
+   * The date and time when the subscription was renewed.
+   * @readonly
+   */
+  renewedAt?: Date;
+
+  /**
+   * The date and time when the subscription starts.
+   * @readonly
+   */
+  startsAt?: Date;
+
+  /**
+   * The store where the subscription was made.
+   * @readonly
+   */
+  store: VendorStore;
+
+  /**
+   * The date and time when the subscription was cancelled.
+   * @readonly
+   */
+  unsubscribedAt?: Date;
+
+  /**
+   * The identifier of the product in the store that was subscribed to.
+   * @readonly
+   */
+  vendorProductId: string;
+
+  /**
+   * The identifier of the product in the store that was subscribed to.
+   * @readonly
+   */
+  vendorTransactionId: string;
+  /**
+   * An original transaction id of the purchase in a store that unlocked this subscription.
+   * For auto-renewable subscription, this will be an id of the first transaction in this subscription.
+   * @readonly
+   */
+  vendorOriginalTransactionId: string;
+  /**
+   * Flag indicating whether the subscription is set to auto-renew.
+   * @readonly
+   */
+  willRenew: boolean;
 }
 
 /**
@@ -441,203 +542,149 @@ export interface AdaptyPaywallProduct {
  * Used in {@link Adapty.getPaywallProducts} method and in {@link Adapty.makePurchase} method.
  * @public
  */
-export interface AdaptyProduct {
-  /**
-   * The currency code of the locale
-   * used to format the price of the product.
-   * The ISO 4217 (USD, EUR).
-   * @readonly
-   */
-  readonly currency_code?: string;
-  /**
-   * The currency symbol of the locale
-   * used to format the price of the product.
-   * ($, €).
-   * @readonly
-   */
-  readonly currency_symbol?: string;
-  /**
-   * An object containing introductory price information for a product.
-   * iOS: Will be null for iOS version below 11.2
-   * and macOS version below 10.14.4.
-   */
-  readonly introductory_discount?: AdaptyProductDiscount;
-  /**
-   * User's eligibility for your introductory offer.
-   * Check this property before displaying info about
-   * introductory offers (i.e. free trials)
-   * @readonly
-   */
-  readonly introductory_offer_eligibility: OfferEligibility;
+export interface AdaptyPaywallProduct {
   /**
    * A description of the product.
-   * @readonly
    */
-  readonly localized_description: string;
+  localizedDescription: string;
   /**
-   * A price’s language is determined
-   * by the preferred language set on the device.
-   * On Android, the formatted price from Google Play as is.
-   * @readonly
+   * The region code of the locale used to format the price of the product.
+   * ISO 3166 ALPHA-2 (US, DE)
    */
-  readonly localized_price?: string;
-  /**
-   * The period’s language is determined
-   * by the preferred language set on the device.
-   * @readonly
-   */
-  readonly localized_subscription_period?: string;
+  regionCode?: string;
   /**
    * The name of the product.
-   * @readonly
    */
-  readonly localized_title: string;
+  localizedTitle: string;
   /**
    * Same as `abTestName` property of the parent {@link AdaptyPaywall}.
-   * @readonly
    */
-  readonly paywall_ab_test_name: string;
+  paywallAbTestName: string;
   /**
    * Same as `name` property of the parent {@link AdaptyPaywall}.
-   * @readonly
    */
-  readonly paywall_name: string;
+  paywallName: string;
   /**
    * The cost of the product in the local currency
-   * @readonly
    */
-  readonly price: number;
+  price?: AdaptyPrice;
   /**
-   * The period details for products that are subscriptions.
-   * Will be `null` for iOS version below 11.2 and macOS version below 10.14.4.
-   * @readonly
+   * A description of the product.
    */
-  readonly subscription_period?: AdaptySubscriptionPeriod;
+  adaptyProductId: string;
   /**
    * Same as `variationId` property of the parent {@link AdaptyPaywall}.
-   * @readonly
    */
-  readonly variation_id: string;
+  paywallVariationId: string;
   /**
    * Unique identifier of a product
    * from App Store Connect or Google Play Console
-   * @readonly
    */
-  readonly vendor_product_id: string;
+  vendorProductId: string;
+  payloadData?: string;
+  subscriptionDetails?: AdaptySubscriptionDetails;
+  ios?: {
+    /**
+     * Boolean value that indicates
+     * whether the product is available for family sharing
+     * in App Store Connect.
+     * Will be `false` for iOS version below 14.0 and macOS version below 11.0.
+     * @see {@link https://developer.apple.com/documentation/storekit/skproduct/3564805-isfamilyshareable}
+     */
+    isFamilyShareable: boolean;
+  };
+}
 
+export interface AdaptySubscriptionDetails {
   /**
-   * An object containing free trial information for the given product.
-   * android only
-   * @see {@link https://developer.android.com/google/play/billing/subscriptions#free-trial}
-   * @readonly
+   * The period details for products that are subscriptions.
+   * Will be `null` for iOS version below 11.2 and macOS version below 10.14.4.
    */
-  readonly free_trial_period?: AdaptySubscriptionPeriod;
+  subscriptionPeriod: AdaptySubscriptionPeriod;
   /**
    * The period’s language is determined
    * by the preferred language set on the device.
-   * android only
-   * @readonly
    */
-  readonly localized_free_trial_period?: string;
-
+  localizedSubscriptionPeriod?: string;
   /**
    * An array of subscription offers available for the auto-renewable subscription.
    * Will be empty for iOS version below 12.2
    * and macOS version below 10.14.4.
-   * iOS only
-   * @readonly
    */
-  readonly discounts: AdaptyProductDiscount[];
-  /**
-   * Boolean value that indicates
-   * whether the product is available for family sharing
-   * in App Store Connect.
-   * Will be `false` for iOS version below 14.0 and macOS version below 11.0.
-   * iOS only
-   * @see {@link https://developer.apple.com/documentation/storekit/skproduct/3564805-isfamilyshareable}
-   * @readonly
-   */
-  readonly is_family_shareable: boolean;
-  /**
-   * User's eligibility for the promotional offers.
-   * Check this property before displaying info
-   * about promotional offers
-   * iOS only
-   * @readonly
-   */
-  readonly promotional_offer_eligibility: OfferEligibility;
-  /**
-   * An identifier of a promotional offer,
-   * provided by Adapty for this specific user.
-   * iOS only
-   * @readonly
-   */
-  readonly promotional_offer_id?: string;
-  /**
-   * The region code of the locale used to format the price of the product.
-   * ISO 3166 ALPHA-2 (US, DE)
-   * iOS only
-   * @readonly
-   */
-  readonly region_code?: string;
-  /**
-   * An identifier of the subscription group
-   * to which the subscription belongs.
-   * Will be `null` for iOS version below 12.0 and macOS version below 10.14.
-   * iOS only
-   * @readonly
-   */
-  readonly subscription_group_identifier?: string;
+  introductoryOffers?: AdaptyDiscountPhase[];
+
+  ios?: {
+    promotionalOffer?: AdaptyDiscountPhase;
+    /**
+     * An identifier of the subscription group
+     * to which the subscription belongs.
+     * Will be `null` for iOS version below 12.0 and macOS version below 10.14.
+     */
+    subscriptionGroupIdentifier?: string;
+  };
+
+  android?: {
+    /**
+     * An object containing free trial information for the given product.
+     * @see {@link https://developer.android.com/google/play/billing/subscriptions#free-trial}
+     */
+    // freeTrialPeriod?: AdaptySubscriptionPeriod;
+    /**
+     * The period’s language is determined
+     * by the preferred language set on the device.
+     */
+    // localizedFreeTrialPeriod?: string;
+    offerId?: string;
+    basePlanId: string;
+    introductoryOfferEligibility: OfferEligibility;
+    offerTags?: string[];
+    renewalType?: 'prepaid' | 'autorenewable';
+  };
 }
 
 /**
  * Discount model to products
  * @see {@link https://doc.adapty.io/docs/rn-api-reference#adaptyproductdiscount}
  */
-export interface AdaptyProductDiscount {
+export interface AdaptyDiscountPhase {
   /**
    * A formatted number of periods of a discount for a user’s locale.
    * @readonly
    */
-  readonly localized_number_of_periods?: string;
-  /**
-   * A formatted price of a discount for a user’s locale.
-   * @readonly
-   */
-  readonly localized_price?: string;
+  localizedNumberOfPeriods?: string;
   /**
    * A formatted subscription period of a discount for a user’s locale.
    * @readonly
    */
-  readonly localized_subscription_period?: string;
+  localizedSubscriptionPeriod?: string;
   /**
    * A number of periods this product discount is available.
    * @readonly
    */
-  readonly number_of_periods: number;
+  numberOfPeriods: number;
   /**
    * Discount price of a product in a local currency.
    * @readonly
    */
-  readonly price: number;
+  price: AdaptyPrice;
   /**
    * An information about period for a product discount.
    * @readonly
    */
-  readonly subscription_period: AdaptySubscriptionPeriod;
+  subscriptionPeriod: AdaptySubscriptionPeriod;
 
+  /**
+   * A payment mode for this product discount.
+   * @readonly
+   */
+  paymentMode: OfferType;
   ios?: {
     /**
      * Unique identifier of a discount offer for a product.
      * @see {@link https://developer.apple.com/documentation/storekit/skpaymentdiscount/3043528-identifier}
      * @readonly
      */
-    readonly identifier?: string;
-    /**
-     * A payment mode for this product discount.
-     * @readonly
-     */
-    readonly payment_mode: OfferType;
+    identifier?: string;
   };
 }
 
@@ -650,44 +697,52 @@ export interface AdaptySubscriptionPeriod {
    * A number of period units.
    * @readonly
    */
-  readonly number_of_units: number;
+  numberOfUnits: number;
   /**
    * A unit of time that a subscription period is specified in.
    * @readonly
    */
-  readonly unit: ProductPeriod;
+  unit: ProductPeriod;
 }
 
 export interface AdaptyProfileParameters {
-  analytics_disabled?: boolean;
-  codable_custom_attributes?: { [key: string]: any };
-  app_tracking_transparency_status?: AppTrackingTransparencyStatus;
-  store_country?: string;
-  first_name?: string;
-  last_name?: string;
+  analyticsDisabled?: boolean;
+  customAttributes?: { [key: string]: any };
+  appTrackingTransparencyStatus?: AppTrackingTransparencyStatus;
+  firstName?: string;
+  lastName?: string;
   gender?: Gender;
-  birthday?: string;
+  birthday?: Date;
   email?: string;
-  phone_number?: string;
-  facebook_anonymous_id?: string;
-  amplitude_user_id?: string;
-  amplitude_device_id?: string;
-  mixpanel_user_id?: string;
-  appmetrica_profile_id?: string;
-  appmetrica_device_id?: string;
-  one_signal_player_id?: string;
-  pushwoosh_hwid?: string;
-  firebase_app_instance_id?: string;
-  airbridge_device_id?: string;
+  phoneNumber?: string;
+  facebookAnonymousId?: string;
+  amplitudeUserId?: string;
+  amplitudeDeviceId?: string;
+  mixpanelUserId?: string;
+  appmetricaProfileId?: string;
+  appmetricaDeviceId?: string;
+  oneSignalPlayerId?: string;
+  oneSignalSubscriptionId?: string;
+  pushwooshHWID?: string;
+  firebaseAppInstanceId?: string;
+  airbridgeDeviceId?: string;
 }
 
-export enum SKPaymentTransactionState {
-  purchasing = 0, // Transaction is being added to the server queue.
-  purchased = 1, // Transaction is in queue, user has been charged.  Client should complete the transaction.
-  failed = 2, // Transaction was cancelled or failed before being added to the server queue.
-  restored = 3, // Transaction was restored from user's purchase history.  Client should complete the transaction.
-  deferred = 4, // The transaction is in the queue, but its final status is pending external action.
+export interface ProductReference {
+  vendorId: string;
+  adaptyProductId: string;
+
+  ios?: {
+    promotionalOfferId?: string;
+  };
+
+  // android?: {
+  //   isConsumable: boolean;
+  //   basePlanId?: string;
+  //   offerId?: string;
+  // };
 }
+
 export interface SKPayment {
   productIdentifier: string;
   quantity: number;
@@ -696,11 +751,16 @@ export interface SKPayment {
   simulatesAskToBuyInSandbox: boolean;
 }
 
-export interface SKTransaction {
+export interface SKPaymentTransaction {
   errorDescription: string;
-  original?: Omit<SKTransaction, 'original'>;
+  original?: Omit<SKPaymentTransaction, 'original'>;
   payment: SKPayment;
   transactionDate: string;
   transactionIdentifier: string;
   transactionState: SKPaymentTransactionState;
+}
+
+export interface AdaptyPurchasedInfo {
+  profile: AdaptyProfile;
+  transaction?: SKPaymentTransaction;
 }

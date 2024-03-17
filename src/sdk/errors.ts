@@ -1,4 +1,4 @@
-export const AdaptyErrors = {
+export const AdaptyErrors = Object.freeze({
   /**
    * System StoreKit codes
    */
@@ -105,13 +105,11 @@ export const AdaptyErrors = {
   profileWasChanged: 3006,
   persistingDataError: 3100,
   operationInterrupted: 9000,
-};
-
-type ErrorType = typeof AdaptyErrors;
+});
 
 export type AdaptyError = {
   message: string;
-  code: ErrorType[keyof ErrorType];
+  code: typeof AdaptyErrors[keyof typeof AdaptyErrors];
   errorMessage: string;
 };
 

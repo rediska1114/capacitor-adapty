@@ -9,5 +9,6 @@
 import Foundation
 
 enum EventName: String {
-    case onLatestProfileLoad
+  case onLatestProfileLoad
+//   case onDeferredPurchase
 }

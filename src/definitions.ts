@@ -1,75 +1,58 @@
-import { PluginListenerHandle } from '@capacitor/core';
-import * as Models from './sdk/cdk';
+import type { PluginListenerHandle } from '@capacitor/core';
+import type * as Models from './sdk/cdk';
+import type { AdaptySdk } from './sdk/api';
 
 export interface AdaptyPlugin {
   activate(options: ActivateOptions): Promise<void>;
-
   updateAttribution(options: AttributionOptions): Promise<void>;
-
-  getPaywall(options: {
-    id: string;
-    locale: string;
-  }): Promise<Models.AdaptyPaywall>;
-
+  getPaywall(
+    options: GetPaywallOptions,
+  ): Promise<{ paywall: AdaptySdk['InOutput.AdaptyPaywall'] }>;
   getPaywallProducts(options: {
-    paywall: Models.AdaptyPaywall;
-  }): Promise<{ products: Models.AdaptyProduct[] }>;
-
+    paywall: AdaptySdk['InOutput.AdaptyPaywall'];
+  }): Promise<{ products: AdaptySdk['Output.AdaptyPaywallProduct'][] }>;
+  getProductsIntroductoryOfferEligibility(options: {
+    vendorProductIds: string[];
+  }): Promise<{ eligibilities: Record<string, Models.OfferEligibility> }>;
   logShowOnboarding(options: ShowOnboardingOptions): Promise<void>;
-  logShowPaywall(options: { paywall: Models.AdaptyPaywall }): Promise<void>;
+  logShowPaywall(options: {
+    paywall: AdaptySdk['InOutput.AdaptyPaywall'];
+  }): Promise<void>;
   setFallbackPaywalls(options: { paywalls: any }): Promise<void>;
-  getProfile(): Promise<Models.AdaptyProfile>;
+  getProfile(): Promise<{ profile: AdaptySdk['Output.AdaptyProfile'] }>;
   identify(options: { customerUserId: string }): Promise<void>;
   logout(): Promise<void>;
   updateProfile(options: {
-    params: Partial<Models.AdaptyProfileParameters>;
+    params: Partial<AdaptySdk['Input.AdaptyProfileParameters']>;
   }): Promise<void>;
   makePurchase(options: {
-    product: Models.AdaptyProduct;
-  }): Promise<MakePurchaseResult>;
+    product: AdaptySdk['Input.AdaptyPaywallProduct'];
+  }): Promise<{ purchase: AdaptySdk['Output.AdaptyPurchasedInfo'] }>;
   presentCodeRedemptionSheet(): Promise<void>;
-  restorePurchases(): Promise<Models.AdaptyProfile>;
-  setLogLevel(options: { logLevel: string }): Promise<void>;
+  restorePurchases(): Promise<{ profile: AdaptySdk['Output.AdaptyProfile'] }>;
+  setLogLevel(options: { logLevel: Models.LogLevel }): Promise<void>;
 
   addListener(
     eventName: 'onLatestProfileLoad',
-    listenerFunc: (profile: Models.AdaptyProfile) => void,
+    listenerFunc: (data: {
+      profile: AdaptySdk['Output.AdaptyProfile'];
+    }) => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
-}
-
-export enum LogLevel {
-  error = 'error',
-  warn = 'warn',
-  info = 'info',
-  verbose = 'verbose',
-  debug = 'debug',
-}
-
-export enum StoreKit2Usage {
-  forIntroEligibilityCheck = 'for_intro_eligibility_check',
-  disabled = 'disabled',
 }
 
 export interface ActivateOptions {
   apiKey: string;
   customerUserId?: string;
-  logLevel?: LogLevel;
+  logLevel?: Models.LogLevel;
   libVersion: string;
   observerMode?: boolean;
-  enableUsageLogs?: boolean;
-  storeKit2Usage?: StoreKit2Usage;
+  storeKit2Usage?: Models.StoreKit2Usage;
+  idfaCollectionDisabled?: boolean;
 }
 
-export enum AttributionNetwork {
-  appsflyer = 'appsflyer',
-  adjust = 'adjust',
-  branch = 'branch',
-  custom = 'custom',
-  appleSearchAds = 'apple_search_ads',
-}
 export interface AttributionOptions {
   attribution: Record<string, any>;
-  source: AttributionNetwork | string;
+  source: Models.AttributionNetwork | string;
   networkUserId?: string;
 }
 
@@ -79,7 +62,9 @@ export interface ShowOnboardingOptions {
   screenOrder: number;
 }
 
-export interface MakePurchaseResult {
-  profile: Models.AdaptyProfile;
-  transaction?: Models.SKTransaction;
+export interface GetPaywallOptions {
+  placementId: string;
+  locale: string;
+  fetchPolicy?: Models.PaywallFetchPolicy;
+  loadTimeout?: number;
 }
