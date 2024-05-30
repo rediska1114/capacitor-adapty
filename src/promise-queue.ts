@@ -3,10 +3,14 @@ export class PromiseQueue {
   private running: boolean = false;
 
   async enqueue(task: () => Promise<void>): Promise<void> {
-    const completionPromise = new Promise<void>(resolve => {
+    const completionPromise = new Promise<void>((resolve, reject) => {
       const wrapped = async () => {
-        await task();
-        resolve();
+        try {
+          await task();
+          resolve();
+        } catch (error) {
+          reject(error);
+        }
       };
       this.queue.push(wrapped);
     });

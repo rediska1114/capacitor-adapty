@@ -43,7 +43,5 @@ export function encodeProfileParameters(
     params.pushwoosh_hwid = pushwooshHWID;
   }
 
-  console.log('updateProfile', profile, params);
-
   return params;
 }
