@@ -262,8 +262,6 @@ public class AdaptyPlugin: CAPPlugin, AdaptyDelegate {
       return call.reject("[AdaptyPlugin] Missing params argument")
     }
 
-    print("updateProfile", paramsData)
-
     guard let params = JSONHelper.decode(AdaptyProfileParameters.self, from: paramsData) else {
       return call.reject("[AdaptyPlugin] Invalid params argument")
     }
@@ -300,7 +298,17 @@ public class AdaptyPlugin: CAPPlugin, AdaptyDelegate {
           switch result {
           case let .success(purchase):
             call.resolve(
-              JSONHelper.encode(["purchase": purchase]))
+              JSONHelper.encode(
+                [
+                  "purchase": [
+                    "profile": purchase.profile,
+                    "transaction": purchase.transaction,
+                    "vendor_transaction_id": purchase.transaction.transactionIdentifier,
+                    "vendor_original_transaction_id": purchase.transaction.original?
+                      .transactionIdentifier,
+                  ]
+                ]
+              ))
           case let .failure(error):
             call.reject(
               "[AdaptyPlugin] \(error.localizedDescription)",

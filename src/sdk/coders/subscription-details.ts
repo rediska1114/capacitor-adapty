@@ -12,6 +12,11 @@ export function decodeSubscriptionDetails(
     introductory_offer_phases,
     promotional_offer,
     subscription_group_identifier,
+    android_base_plan_id,
+    android_offer_id,
+    android_offer_tags,
+    introductory_offer_eligibility,
+    renewal_type,
     ...rest
   } = subscriptionDetails;
 
@@ -24,6 +29,13 @@ export function decodeSubscriptionDetails(
         ? decodeDiscountPhase(promotional_offer)
         : undefined,
       subscriptionGroupIdentifier: subscription_group_identifier,
+    },
+    android: {
+      basePlanId: android_base_plan_id,
+      offerId: android_offer_id,
+      offerTags: android_offer_tags,
+      renewalType: renewal_type,
+      introductoryOfferEligibility: introductory_offer_eligibility,
     },
   };
 }

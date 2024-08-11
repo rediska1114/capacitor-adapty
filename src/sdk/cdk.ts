@@ -96,6 +96,17 @@ export const SKPaymentTransactionState = Object.freeze({
 export type SKPaymentTransactionState =
   typeof SKPaymentTransactionState[keyof typeof SKPaymentTransactionState];
 
+export const AdaptyAndroidSubscriptionUpdateReplacementMode = Object.freeze({
+  ChargeFullPrice: 'charge_full_price',
+  Deferred: 'deferred',
+  WithoutProration: 'without_proration',
+  ChargeProratedPrice: 'charge_prorated_price',
+  WithTimeProration: 'with_time_proration',
+});
+
+export type AdaptyAndroidSubscriptionUpdateReplacementMode =
+  typeof AdaptyAndroidSubscriptionUpdateReplacementMode[keyof typeof AdaptyAndroidSubscriptionUpdateReplacementMode];
+
 export interface AdaptyPrice {
   /**
    * Price as number
@@ -574,7 +585,7 @@ export interface AdaptyPaywallProduct {
    * from App Store Connect or Google Play Console
    */
   vendorProductId: string;
-  payloadData?: string;
+  payloadData?: Object;
   subscriptionDetails?: AdaptySubscriptionDetails;
   ios?: {
     /**
@@ -729,11 +740,11 @@ export interface ProductReference {
     promotionalOfferId?: string;
   };
 
-  // android?: {
-  //   isConsumable: boolean;
-  //   basePlanId?: string;
-  //   offerId?: string;
-  // };
+  android?: {
+    isConsumable: boolean;
+    basePlanId?: string;
+    offerId?: string;
+  };
 }
 
 export interface SKPayment {
@@ -753,7 +764,20 @@ export interface SKPaymentTransaction {
   transactionState: SKPaymentTransactionState;
 }
 
+export interface AndroidPurchase {}
+
 export interface AdaptyPurchasedInfo {
   profile: AdaptyProfile;
+
+  /**
+   * iOS purchase object
+   */
   transaction?: SKPaymentTransaction;
+  /**
+   * Android purchase object
+   */
+  purchase?: AndroidPurchase;
+
+  vendorTransactionId: string;
+  vendorOriginalTransactionId: string;
 }

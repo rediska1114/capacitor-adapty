@@ -44,7 +44,7 @@ export interface components {
       paywall_variation_id: string;
       paywall_ab_test_name: string;
       paywall_name: string;
-      payload_data?: string;
+      payload_data?: Object;
     };
     /**
      * @description iOS Only
@@ -150,6 +150,8 @@ export interface components {
       base_plan_id?: string;
       /** @description Android Only */
       offer_id?: string;
+      /** @description Android Only */
+      is_consumable?: boolean;
     };
     /**
      * @example eligible
@@ -363,6 +365,9 @@ export interface components {
     };
     'Output.AdaptyPurchasedInfo': {
       profile: components['schemas']['Output.AdaptyProfile'];
+      purchase: any
+      vendor_transaction_id: string;
+      vendor_original_transaction_id: string;
       transaction?: components['schemas']['Output.SKPaymentTransaction'];
     };
   };

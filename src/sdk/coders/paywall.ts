@@ -48,6 +48,11 @@ function decodeProductReference(
     ios: {
       promotionalOfferId: product.promotional_offer_id,
     },
+    android: {
+      isConsumable: product.is_consumable || false,
+      basePlanId: product.base_plan_id,
+      offerId: product.offer_id,
+    }
   };
 }
 
@@ -58,5 +63,8 @@ function encodeProductReference(
     vendor_product_id: product.vendorId,
     adapty_product_id: product.adaptyProductId,
     promotional_offer_id: product.ios?.promotionalOfferId,
+    base_plan_id: product.android?.basePlanId,
+    offer_id: product.android?.offerId,
+    is_consumable: product.android?.isConsumable,
   };
 }

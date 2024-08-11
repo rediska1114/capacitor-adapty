@@ -22,6 +22,7 @@ export function decodeAccessLevel(
     active_introductory_offer_type,
     active_promotional_offer_type,
     cancellation_reason,
+    offer_id,
     ...rest
   } = accessLevel;
 
@@ -37,5 +38,8 @@ export function decodeAccessLevel(
     activeIntroductoryOfferType: active_introductory_offer_type as OfferType,
     activePromotionalOfferType: active_promotional_offer_type as OfferType,
     cancellationReason: cancellation_reason as CancellationReason,
+    android: {
+      offerId: offer_id,
+    },
   };
 }

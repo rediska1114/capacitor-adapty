@@ -1,6 +1,6 @@
 import env from '@dotenv-run/rollup';
 import resolve from '@rollup/plugin-node-resolve';
-import ts from 'rollup-plugin-ts';
+import typescript from 'rollup-plugin-typescript2';
 
 const esm = [
   {
@@ -33,9 +33,7 @@ const nonEsm = [
 const baseConfig = {
   input: 'src/index.ts',
   plugins: [
-    ts({
-      transpiler: 'typescript',
-    }),
+    typescript(/*{ plugin options }*/),
     resolve(),
     env({ prefix: 'PUBLIC_', verbose: true, root: './' }),
   ],

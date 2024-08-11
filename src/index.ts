@@ -1,9 +1,14 @@
-import { PluginListenerHandle, registerPlugin } from '@capacitor/core';
+import {
+  Capacitor,
+  PluginListenerHandle,
+  registerPlugin,
+} from '@capacitor/core';
 import type * as Models from './sdk/cdk';
 import type {
   ActivateOptions,
   AdaptyPlugin,
   GetPaywallOptions,
+  MakePurchaseOptions,
 } from './definitions';
 import { decodePaywall, encodePaywall } from './sdk/coders/paywall';
 import { decodeProduct, encodeProduct } from './sdk/coders/product';
@@ -94,14 +99,25 @@ export class Adapty {
       .then(res => res.products.map(decodeProduct));
   }
 
-  async getProductsIntroductoryOfferEligibility(
-    vendorProductIds: string[],
-  ): Promise<Record<string, Models.OfferEligibility>> {
+  async getProductsIntroductoryOfferEligibility<
+    T extends Models.AdaptyPaywallProduct['vendorProductId'],
+  >(vendorProductIds: T[]): Promise<Record<T, Models.OfferEligibility>> {
     await this.awaitActivation();
+
+    if (Capacitor.getPlatform() === 'android') {
+      // const result = products.reduce((acc, product) => {
+      //   acc[product.vendorProductId as T] =
+      //     product.subscriptionDetails?.android?.introductoryOfferEligibility ??
+      //     'ineligible';
+      //   return acc;
+      // }, {} as Record<T, Models.OfferEligibility>);
+
+      return {} as Record<T, Models.OfferEligibility>;
+    }
 
     return this.adapty
       .getProductsIntroductoryOfferEligibility({
-        vendorProductIds,
+        vendorProductIds, // : products.map(p => p.vendorId),
       })
       .then(res => res.eligibilities);
   }
@@ -158,17 +174,34 @@ export class Adapty {
 
   async makePurchase(
     product: Models.AdaptyPaywallProduct,
+    android?: {
+      oldSubVendorProductId: string;
+      prorationMode: Models.AdaptyAndroidSubscriptionUpdateReplacementMode;
+      isOfferPersonalized?: boolean;
+    },
   ): Promise<Models.AdaptyPurchasedInfo> {
     await this.awaitActivation();
 
-    return this.adapty
-      .makePurchase({ product: encodeProduct(product) })
-      .then(res => ({
-        profile: decodeProfile(res.purchase.profile),
-        transaction: res.purchase.transaction
-          ? decodeSKTransaction(res.purchase.transaction)
-          : undefined,
-      }));
+    let params: MakePurchaseOptions = {
+      product: encodeProduct(product),
+      android: android
+        ? {
+            replacement_mode: android.prorationMode,
+            old_sub_vendor_product_id: android.oldSubVendorProductId,
+            is_offer_personalized: android.isOfferPersonalized,
+          }
+        : undefined,
+    };
+
+    return this.adapty.makePurchase(params).then(res => ({
+      profile: decodeProfile(res.purchase.profile),
+      purchase: res.purchase.purchase,
+      vendorOriginalTransactionId: res.purchase.vendor_original_transaction_id,
+      vendorTransactionId: res.purchase.vendor_transaction_id,
+      transaction: res.purchase.transaction
+        ? decodeSKTransaction(res.purchase.transaction)
+        : undefined,
+    }));
   }
 
   async presentCodeRedemptionSheet() {
