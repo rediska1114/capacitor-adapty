@@ -1,6 +1,6 @@
 {
   "name": "capacitor-adapty",
-  "version": "4.1.0",
+  "version": "4.1.1",
   "description": "Adapty plugin for capacitor",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
@@ -49,6 +49,8 @@
   "files": [
     "dist/",
     "ios/Plugin/",
+    "android/src/main/",
+    "android/build.gradle",
     "CapacitorAdapty.podspec"
   ],
   "eslintConfig": {
