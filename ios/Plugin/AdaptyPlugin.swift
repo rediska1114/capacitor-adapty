@@ -300,13 +300,7 @@ public class AdaptyPlugin: CAPPlugin, AdaptyDelegate {
             call.resolve(
               JSONHelper.encode(
                 [
-                  "purchase": [
-                    "profile": purchase.profile,
-                    "transaction": purchase.transaction,
-                    "vendor_transaction_id": purchase.transaction.transactionIdentifier,
-                    "vendor_original_transaction_id": purchase.transaction.original?
-                      .transactionIdentifier,
-                  ]
+                  "purchase": purchase
                 ]
               ))
           case let .failure(error):
@@ -378,15 +372,20 @@ public class AdaptyPlugin: CAPPlugin, AdaptyDelegate {
 }
 
 extension AdaptyPurchasedInfo: Encodable {
-  enum CodingKeys: String, CodingKey {
-    case profile
-    case transaction
-  }
-  public func encode(to encoder: Encoder) throws {
-    var container = encoder.container(keyedBy: CodingKeys.self)
-    try container.encode(profile, forKey: .profile)
-    try container.encode(transaction, forKey: .transaction)
-  }
+    enum CodingKeys: String, CodingKey {
+        case profile
+        case transaction
+        case vendorTransactionId = "vendor_transaction_id"
+        case vendorOriginalTransactionId = "vendor_original_transaction_id"
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(profile, forKey: .profile)
+        try container.encode(transaction, forKey: .transaction)
+        try container.encode(transaction.transactionIdentifier, forKey: .vendorTransactionId)
+        try container.encode(transaction.original?.transactionIdentifier, forKey: .vendorOriginalTransactionId)
+    }
 }
 
 extension SKPaymentTransaction: Encodable {
