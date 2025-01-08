@@ -18,7 +18,7 @@ export interface AdaptyPlugin {
   logShowPaywall(options: {
     paywall: AdaptySdk['InOutput.AdaptyPaywall'];
   }): Promise<void>;
-  setFallbackPaywalls(options: { paywalls: any }): Promise<void>;
+  setFallbackPaywalls(options: { fileName?: string }): Promise<void>;
   getProfile(): Promise<{ profile: AdaptySdk['Output.AdaptyProfile'] }>;
   identify(options: { customerUserId: string }): Promise<void>;
   logout(): Promise<void>;

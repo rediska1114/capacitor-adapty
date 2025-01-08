@@ -196,16 +196,22 @@ public class AdaptyPlugin: CAPPlugin, AdaptyDelegate {
   }
 
   @objc func setFallbackPaywalls(_ call: CAPPluginCall) {
-    guard let paywallsObj = call.getObject("paywalls") else {
-      return call.reject("[AdaptyPlugin] Missing paywalls argument")
+    guard let fileName = call.getString("fileName") else {
+      return call.reject("[AdaptyPlugin] Missing fileName argument")
     }
 
-    guard let paywallsData = try? JSONSerialization.data(withJSONObject: paywallsObj, options: [])
+    guard let fileNameArr = fileName.components(separatedBy: ".") else {
+      return call.reject("[AdaptyPlugin] Invalid fileName argument")
+    }
+    let forResource = !fileNameArr.isEmpty ? fileNameArr[0] : nil
+    let withExtension = (fileNameArr.count > 1) ? fileNameArr[1] : "json"
+    guard let forResource = forResource,
+      let fileURL = Bundle.main.url(forResource: forResource, withExtension: withExtension)
     else {
-      return call.reject("[AdaptyPlugin] Invalid paywalls argument")
+      return call.reject("[AdaptyPlugin] Invalid fileName argument")
     }
 
-    Adapty.setFallbackPaywalls(paywallsData) { maybeErr in
+    Adapty.setFallbackPaywalls(fileURL: fileURL) { maybeErr in
       if let error = maybeErr {
         return call.reject(
           "[AdaptyPlugin] \(error.localizedDescription)", String(error.adaptyErrorCode.rawValue),
@@ -372,20 +378,21 @@ public class AdaptyPlugin: CAPPlugin, AdaptyDelegate {
 }
 
 extension AdaptyPurchasedInfo: Encodable {
-    enum CodingKeys: String, CodingKey {
-        case profile
-        case transaction
-        case vendorTransactionId = "vendor_transaction_id"
-        case vendorOriginalTransactionId = "vendor_original_transaction_id"
-    }
+  enum CodingKeys: String, CodingKey {
+    case profile
+    case transaction
+    case vendorTransactionId = "vendor_transaction_id"
+    case vendorOriginalTransactionId = "vendor_original_transaction_id"
+  }
 
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(profile, forKey: .profile)
-        try container.encode(transaction, forKey: .transaction)
-        try container.encode(transaction.transactionIdentifier, forKey: .vendorTransactionId)
-        try container.encode(transaction.original?.transactionIdentifier, forKey: .vendorOriginalTransactionId)
-    }
+  public func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    try container.encode(profile, forKey: .profile)
+    try container.encode(transaction, forKey: .transaction)
+    try container.encode(transaction.transactionIdentifier, forKey: .vendorTransactionId)
+    try container.encode(
+      transaction.original?.transactionIdentifier, forKey: .vendorOriginalTransactionId)
+  }
 }
 
 extension SKPaymentTransaction: Encodable {

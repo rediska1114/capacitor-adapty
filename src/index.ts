@@ -138,9 +138,9 @@ export class Adapty {
     return this.adapty.logShowPaywall({ paywall: encodePaywall(paywall) });
   }
 
-  async setFallbackPaywalls(paywalls: any): Promise<void> {
+  async setFallbackPaywalls(fileName?: string): Promise<void> {
     await this.awaitActivation();
-    return this.adapty.setFallbackPaywalls({ paywalls });
+    return this.adapty.setFallbackPaywalls({ fileName });
   }
 
   async getProfile(): Promise<Models.AdaptyProfile> {

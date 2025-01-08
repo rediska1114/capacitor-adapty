@@ -1,6 +1,5 @@
 package rediska1114.plugins.adapty
 
-import android.util.Log
 import com.adapty.Adapty
 import com.adapty.Adapty.activate
 import com.adapty.internal.utils.DEFAULT_PAYWALL_TIMEOUT_MILLIS
@@ -15,10 +14,6 @@ import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
-import com.google.gson.FieldNamingPolicy
-import com.google.gson.Gson
-import rediska1114.plugins.adapty.coders.accessField
-import rediska1114.plugins.adapty.coders.backendProductToJson
 import rediska1114.plugins.adapty.coders.paywallFromJson
 import rediska1114.plugins.adapty.coders.paywallProductFromJson
 import rediska1114.plugins.adapty.coders.profileParametersFromJson
@@ -30,344 +25,348 @@ var MEMO_ACTIVATE_ARGS: Boolean = false
 @CapacitorPlugin(name = "Adapty")
 class AdaptyPlugin : Plugin() {
 
-    @PluginMethod
-    fun activate(call: PluginCall) {
-        if (MEMO_ACTIVATE_ARGS) {
-            call.resolve()
-            return
+  @PluginMethod
+  fun activate(call: PluginCall) {
+    if (MEMO_ACTIVATE_ARGS) {
+      call.resolve()
+      return
+    }
+
+    val apiKey = call.getString("apiKey") ?: return call.reject("apiKey is required")
+
+    val customerUserId = call.getString("customerUserId")
+    val logLevelStr = call.getString("logLevel", "none")
+    val observerMode = call.getBoolean("observerMode", false)
+    //        val libVersion = call.getString("libVersion")
+
+    var logLevel = AdaptyLogLevel.NONE
+
+    if (logLevelStr != null) {
+      logLevel =
+          when (logLevelStr) {
+            "verbose" -> AdaptyLogLevel.VERBOSE
+            "info" -> AdaptyLogLevel.INFO
+            "warn" -> AdaptyLogLevel.WARN
+            "error" -> AdaptyLogLevel.ERROR
+            else -> AdaptyLogLevel.NONE
+          }
+    }
+
+    try {
+      Adapty.logLevel = logLevel
+
+      Adapty.activate(
+          bridge.activity.applicationContext,
+          //             new AdaptyConfig.Builder(apiKey)
+          //                    .withObserverMode(observerMode)
+          //                    .withCustomerUserId(customerUserId)
+          //                    .build());
+
+          apiKey,
+          observerMode!!,
+          customerUserId,
+      )
+
+      MEMO_ACTIVATE_ARGS = true
+
+      call.resolve()
+    } catch (e: Exception) {
+      call.reject(e.localizedMessage)
+    }
+  }
+
+  @PluginMethod
+  fun updateAttribution(call: PluginCall) {
+    val attribution = call.getObject("attribution") ?: return call.reject("attribution is required")
+    val sourceStr = call.getString("source") ?: return call.reject("source is required")
+    val networkUserId = call.getString("networkUserId")
+
+    val source =
+        when (sourceStr) {
+          "appsflyer" -> AdaptyAttributionSource.APPSFLYER
+          "adjust" -> AdaptyAttributionSource.ADJUST
+          "branch" -> AdaptyAttributionSource.BRANCH
+          else -> AdaptyAttributionSource.CUSTOM
         }
 
-
-        val apiKey = call.getString("apiKey") ?: return call.reject("apiKey is required")
-
-        val customerUserId = call.getString("customerUserId")
-        val logLevelStr = call.getString("logLevel", "none")
-        val observerMode = call.getBoolean("observerMode", false)
-        //        val libVersion = call.getString("libVersion")
-
-        var logLevel = AdaptyLogLevel.NONE
-
-        if (logLevelStr != null) {
-            logLevel =
-                    when (logLevelStr) {
-                        "verbose" -> AdaptyLogLevel.VERBOSE
-                        "info" -> AdaptyLogLevel.INFO
-                        "warn" -> AdaptyLogLevel.WARN
-                        "error" -> AdaptyLogLevel.ERROR
-                        else -> AdaptyLogLevel.NONE
-                    }
-        }
-
-        try {
-            Adapty.logLevel = logLevel
-
-            Adapty.activate(
-                    bridge.activity.applicationContext,
-                    //             new AdaptyConfig.Builder(apiKey)
-                    //                    .withObserverMode(observerMode)
-                    //                    .withCustomerUserId(customerUserId)
-                    //                    .build());
-
-                    apiKey,
-                    observerMode!!,
-                    customerUserId,
-            )
-
-            MEMO_ACTIVATE_ARGS = true
-
-
+    Adapty.updateAttribution(attribution, source, networkUserId) { error ->
+      if (error != null) {
+        call.reject(error.localizedMessage)
+      } else {
         call.resolve()
-        
-        } catch (e: Exception) {
-            call.reject(e.localizedMessage)
-        }
+      }
     }
+  }
 
-    @PluginMethod
-    fun updateAttribution(call: PluginCall) {
-        val attribution =
-                call.getObject("attribution") ?: return call.reject("attribution is required")
-        val sourceStr = call.getString("source") ?: return call.reject("source is required")
-        val networkUserId = call.getString("networkUserId")
+  @InternalAdaptyApi
+  @PluginMethod
+  fun getPaywall(call: PluginCall) {
+    val placementId = call.getString("placementId") ?: return call.reject("placementId is required")
+    val locale = call.getString("locale")
+    val fetchPolicyStr = call.getString("fetchPolicy", "default")
 
-        val source =
-                when (sourceStr) {
-                    "appsflyer" -> AdaptyAttributionSource.APPSFLYER
-                    "adjust" -> AdaptyAttributionSource.ADJUST
-                    "branch" -> AdaptyAttributionSource.BRANCH
-                    else -> AdaptyAttributionSource.CUSTOM
-                }
+    try {
 
-        Adapty.updateAttribution(attribution, source, networkUserId) { error ->
-            if (error != null) {
-                call.reject(error.localizedMessage)
-            } else {
-                call.resolve()
-            }
-        }
-    }
+      val fetchPolicy =
+          when (fetchPolicyStr) {
+            "return_cache_data_else_load" ->
+                AdaptyPaywall.FetchPolicy.Companion.ReturnCacheDataElseLoad
+            "reload_revalidating_cache_data" ->
+                AdaptyPaywall.FetchPolicy.Companion.ReloadRevalidatingCacheData
+            else -> AdaptyPaywall.FetchPolicy.Companion.Default
+          }
 
-    @InternalAdaptyApi
-    @PluginMethod
-    fun getPaywall(call: PluginCall) {
-        val placementId =
-                call.getString("placementId") ?: return call.reject("placementId is required")
-        val locale = call.getString("locale")
-        val fetchPolicyStr = call.getString("fetchPolicy", "default")
+      val loadTimeoutMillis =
+          call.getDouble("loadTimeout")?.toInt()?.let { it / 1000 }
+              ?: DEFAULT_PAYWALL_TIMEOUT_MILLIS
 
-        try {
-
-            val fetchPolicy = when (fetchPolicyStr) {
-                                "return_cache_data_else_load" ->
-                                        AdaptyPaywall.FetchPolicy.Companion.ReturnCacheDataElseLoad
-                                "reload_revalidating_cache_data" ->
-                                        AdaptyPaywall.FetchPolicy.Companion.ReloadRevalidatingCacheData
-                                else -> AdaptyPaywall.FetchPolicy.Companion.Default
-                            }
-
-            val loadTimeoutMillis =
-                    call.getDouble("loadTimeout")?.toInt()?.let { it / 1000 }
-                            ?: DEFAULT_PAYWALL_TIMEOUT_MILLIS
-
-            Adapty.getPaywall(placementId, locale, fetchPolicy, loadTimeoutMillis) { result ->
-                when (result) {
-                    is AdaptyResult.Success -> {
-
-                        val data = JSObject()
-                        data.put("paywall", result.value.toJson())
-                        call.resolve(data)
-                    }
-                    is AdaptyResult.Error -> call.reject(result.error.localizedMessage)
-                }
-            }
-        } catch (e: Exception) {
-            call.reject(e.localizedMessage)
-        }
-    }
-
-    @PluginMethod
-    fun getPaywallProducts(call: PluginCall) {
-        val paywallData = call.getObject("paywall") ?: return call.reject("paywall is required")
-
-        try {
-            val paywall = paywallFromJson(paywallData)
-
-            Adapty.getPaywallProducts(paywall) { result ->
-                when (result) {
-                    is AdaptyResult.Success -> {
-                        val data = JSObject()
-                        data.put("products", result.value.map { it.toJson() }.toJSArray())
-                        call.resolve(data)
-                    }
-
-                    is AdaptyResult.Error -> call.reject(result.error.localizedMessage)
-                }
-            }
-        } catch (e: Exception) {
-            call.reject(e.localizedMessage)
-        }
-    }
-
-    @PluginMethod
-    fun getProductsIntroductoryOfferEligibility(call: PluginCall) {
-          val data = JSObject()
-        call.resolve(data)
-    }
-
-      @PluginMethod
-    fun logShowOnboarding(call: PluginCall) {
-        val name = call.getString("name") 
-        val screenName = call.getString("screenName")
-        val screenOrder = call.getInt("screenOrder") ?: return call.reject("screenOrder is required")
-
-        Adapty.logShowOnboarding(name, screenName, screenOrder) { error ->
-            if (error != null) {
-                call.reject(error.localizedMessage)
-            } else {
-                call.resolve()
-            }
-        }
-    }
-
-    @PluginMethod
-    fun logShowPaywall(call: PluginCall) {
-        val paywallData = call.getObject("paywall") ?: return call.reject("paywall is required")
-
-        try {
-            val paywall = paywallFromJson(paywallData)
-
-            Adapty.logShowPaywall(paywall){ error ->
-                if (error != null) {
-                    call.reject(error.localizedMessage)
-                } else {
-                    call.resolve()
-                }
-            }
-        } catch (e: Exception) {
-            call.reject(e.localizedMessage)
-        }
-    }
-
-    @PluginMethod
-    fun setFallbackPaywalls(call: PluginCall) {
-        val paywallsData = call.getString("paywalls") ?: return call.reject("paywalls is required")
-        try {
-
-            Adapty.setFallbackPaywalls(paywallsData) { error ->
-                if (error != null) {
-                    call.reject(error.localizedMessage)
-                } else {
-                    call.resolve()
-                }
-            }
-        } catch (e: Exception) {
-            call.reject(e.localizedMessage)
-        }
-    }
-
-    @PluginMethod
-    fun getProfile(call: PluginCall) {
-        Adapty.getProfile() { result ->
-            when (result) {
-                is AdaptyResult.Success -> {
-                    val data = JSObject()
-                    data.put("profile", result.value.toJson())
-                    call.resolve(data)
-                }
-
-                is AdaptyResult.Error -> call.reject(result.error.localizedMessage)
-            }
-        }
-    }
-
-    @PluginMethod
-    fun identify(call: PluginCall) {
-        val customerUserId = call.getString("customerUserId") ?: return call.reject("customerUserId is required")
-
-        Adapty.identify(customerUserId) { error ->
-            if (error != null) {
-                call.reject(error.localizedMessage)
-            } else {
-                call.resolve()
-            }
-        }
-    }
-
-    @PluginMethod
-    fun logout(call: PluginCall) {
-        Adapty.logout() { error ->
-            if (error != null) {
-                call.reject(error.localizedMessage)
-            } else {
-                call.resolve()
-            }
-        }
-    }
-
-    @PluginMethod
-    fun updateProfile(call: PluginCall) {
-        val paramsData = call.getObject("params") ?: return call.reject("params is required")
-
-        val params = profileParametersFromJson(paramsData)
-      
-         Adapty.updateProfile(params) { error ->
-            if (error != null) {
-                call.reject(error.localizedMessage)
-            } else {
-                call.resolve()
-            }
-        }
-    }
-
-
-    @PluginMethod
-    fun makePurchase(call: PluginCall) {
-        val productData = call.getObject("product") ?: return call.reject("product is required")
-        val options = call.getObject("android")
-        val isOfferPersonalized = options?.getBoolean("is_offer_personalized", false)
-
-        var params: AdaptySubscriptionUpdateParameters? = null
-        if (options != null) {
-            val replacementModeStr = options.getString("replacement_mode") ?: return call.reject("replacement_mode is required")
-            val oldSubVendorProductId = options.getString("old_sub_vendor_product_id") ?: return call.reject("old_sub_vendor_product_id is required")
-
-            val replacementMode = when (replacementModeStr) {
-                "with_time_proration" -> AdaptySubscriptionUpdateParameters.ReplacementMode.WITH_TIME_PRORATION
-                "charge_prorated_price" -> AdaptySubscriptionUpdateParameters.ReplacementMode.CHARGE_PRORATED_PRICE
-                "without_proration" -> AdaptySubscriptionUpdateParameters.ReplacementMode.WITHOUT_PRORATION
-                "deferred" -> AdaptySubscriptionUpdateParameters.ReplacementMode.DEFERRED
-                "charge_full_price" -> AdaptySubscriptionUpdateParameters.ReplacementMode.CHARGE_FULL_PRICE
-                else -> return call.reject("replacement_mode is invalid")
-            }
-
-                params = AdaptySubscriptionUpdateParameters(
-                oldSubVendorProductId,
-                replacementMode,
-            )
-        }
-
-        val product = paywallProductFromJson(productData)
-
-        Adapty.makePurchase(
-            activity = bridge.activity,
-            product = product,
-            subscriptionUpdateParams = params,
-            isOfferPersonalized = isOfferPersonalized ?: false
-        ) { result ->
-            when (result) {
-                is AdaptyResult.Success -> {
-                    val data = JSObject()
-                    data.put("purchase", result.value?.toJson())
-                    call.resolve(data)
-                }
-
-                is AdaptyResult.Error -> call.reject(result.error.localizedMessage)
-            }
-        }
-    }
-
-    @PluginMethod
-    fun presentCodeRedemptionSheet(call: PluginCall) {
-        call.resolve()
-    }
-
-    @PluginMethod
-    fun restorePurchases(call: PluginCall) {
-        Adapty.restorePurchases { result ->
+      Adapty.getPaywall(placementId, locale, fetchPolicy, loadTimeoutMillis) { result ->
         when (result) {
-            is AdaptyResult.Success  -> {
-                val data = JSObject()
-                data.put("profile", result.value.toJson())
-                call.resolve(data)
-            }
-            is AdaptyResult.Error -> call.reject(result.error.localizedMessage)
+          is AdaptyResult.Success -> {
+
+            val data = JSObject()
+            data.put("paywall", result.value.toJson())
+            call.resolve(data)
+          }
+          is AdaptyResult.Error -> call.reject(result.error.localizedMessage)
         }
+      }
+    } catch (e: Exception) {
+      call.reject(e.localizedMessage)
     }
+  }
+
+  @PluginMethod
+  fun getPaywallProducts(call: PluginCall) {
+    val paywallData = call.getObject("paywall") ?: return call.reject("paywall is required")
+
+    try {
+      val paywall = paywallFromJson(paywallData)
+
+      Adapty.getPaywallProducts(paywall) { result ->
+        when (result) {
+          is AdaptyResult.Success -> {
+            val data = JSObject()
+            data.put("products", result.value.map { it.toJson() }.toJSArray())
+            call.resolve(data)
+          }
+
+          is AdaptyResult.Error -> call.reject(result.error.localizedMessage)
+        }
+      }
+    } catch (e: Exception) {
+      call.reject(e.localizedMessage)
     }
+  }
 
-    @PluginMethod
-    fun setLogLevel(call: PluginCall) {
-        val logLevelStr = call.getString("logLevel") ?: return call.reject("logLevel is required")
+  @PluginMethod
+  fun getProductsIntroductoryOfferEligibility(call: PluginCall) {
+    val data = JSObject()
+    call.resolve(data)
+  }
 
-        val logLevel =
-                when (logLevelStr) {
-                    "verbose" -> AdaptyLogLevel.VERBOSE
-                    "info" -> AdaptyLogLevel.INFO
-                    "warn" -> AdaptyLogLevel.WARN
-                    "error" -> AdaptyLogLevel.ERROR
-                    else -> AdaptyLogLevel.NONE
-                }
+  @PluginMethod
+  fun logShowOnboarding(call: PluginCall) {
+    val name = call.getString("name")
+    val screenName = call.getString("screenName")
+    val screenOrder = call.getInt("screenOrder") ?: return call.reject("screenOrder is required")
 
-        Adapty.logLevel = logLevel
+    Adapty.logShowOnboarding(name, screenName, screenOrder) { error ->
+      if (error != null) {
+        call.reject(error.localizedMessage)
+      } else {
         call.resolve()
+      }
     }
+  }
 
-        // didLoadLatestProfile // TODO
+  @PluginMethod
+  fun logShowPaywall(call: PluginCall) {
+    val paywallData = call.getObject("paywall") ?: return call.reject("paywall is required")
 
+    try {
+      val paywall = paywallFromJson(paywallData)
 
-      companion object {
-            const val TAG: String = "AdaptyPlugin"
+      Adapty.logShowPaywall(paywall) { error ->
+        if (error != null) {
+          call.reject(error.localizedMessage)
+        } else {
+          call.resolve()
         }
+      }
+    } catch (e: Exception) {
+      call.reject(e.localizedMessage)
+    }
+  }
+
+  @PluginMethod
+  fun setFallbackPaywalls(call: PluginCall) {
+    val fileName = call.getString("fileName") ?: "android_fallback.json"
+
+    val location = FileLocation.fromAsset(fileName)
+
+    try {
+      Adapty.setFallbackPaywalls(location) { error ->
+        if (error != null) {
+          call.reject(error.localizedMessage)
+        } else {
+          call.resolve()
+        }
+      }
+    } catch (e: Exception) {
+      call.reject(e.localizedMessage)
+    }
+  }
+
+  @PluginMethod
+  fun getProfile(call: PluginCall) {
+    Adapty.getProfile() { result ->
+      when (result) {
+        is AdaptyResult.Success -> {
+          val data = JSObject()
+          data.put("profile", result.value.toJson())
+          call.resolve(data)
+        }
+
+        is AdaptyResult.Error -> call.reject(result.error.localizedMessage)
+      }
+    }
+  }
+
+  @PluginMethod
+  fun identify(call: PluginCall) {
+    val customerUserId =
+        call.getString("customerUserId") ?: return call.reject("customerUserId is required")
+
+    Adapty.identify(customerUserId) { error ->
+      if (error != null) {
+        call.reject(error.localizedMessage)
+      } else {
+        call.resolve()
+      }
+    }
+  }
+
+  @PluginMethod
+  fun logout(call: PluginCall) {
+    Adapty.logout() { error ->
+      if (error != null) {
+        call.reject(error.localizedMessage)
+      } else {
+        call.resolve()
+      }
+    }
+  }
+
+  @PluginMethod
+  fun updateProfile(call: PluginCall) {
+    val paramsData = call.getObject("params") ?: return call.reject("params is required")
+
+    val params = profileParametersFromJson(paramsData)
+
+    Adapty.updateProfile(params) { error ->
+      if (error != null) {
+        call.reject(error.localizedMessage)
+      } else {
+        call.resolve()
+      }
+    }
+  }
+
+  @PluginMethod
+  fun makePurchase(call: PluginCall) {
+    val productData = call.getObject("product") ?: return call.reject("product is required")
+    val options = call.getObject("android")
+    val isOfferPersonalized = options?.getBoolean("is_offer_personalized", false)
+
+    var params: AdaptySubscriptionUpdateParameters? = null
+    if (options != null) {
+      val replacementModeStr =
+          options.getString("replacement_mode")
+              ?: return call.reject("replacement_mode is required")
+      val oldSubVendorProductId =
+          options.getString("old_sub_vendor_product_id")
+              ?: return call.reject("old_sub_vendor_product_id is required")
+
+      val replacementMode =
+          when (replacementModeStr) {
+            "with_time_proration" ->
+                AdaptySubscriptionUpdateParameters.ReplacementMode.WITH_TIME_PRORATION
+            "charge_prorated_price" ->
+                AdaptySubscriptionUpdateParameters.ReplacementMode.CHARGE_PRORATED_PRICE
+            "without_proration" ->
+                AdaptySubscriptionUpdateParameters.ReplacementMode.WITHOUT_PRORATION
+            "deferred" -> AdaptySubscriptionUpdateParameters.ReplacementMode.DEFERRED
+            "charge_full_price" ->
+                AdaptySubscriptionUpdateParameters.ReplacementMode.CHARGE_FULL_PRICE
+            else -> return call.reject("replacement_mode is invalid")
+          }
+
+      params =
+          AdaptySubscriptionUpdateParameters(
+              oldSubVendorProductId,
+              replacementMode,
+          )
     }
 
+    val product = paywallProductFromJson(productData)
 
+    Adapty.makePurchase(
+        activity = bridge.activity,
+        product = product,
+        subscriptionUpdateParams = params,
+        isOfferPersonalized = isOfferPersonalized ?: false) { result ->
+          when (result) {
+            is AdaptyResult.Success -> {
+              val data = JSObject()
+              data.put("purchase", result.value?.toJson())
+              call.resolve(data)
+            }
+
+            is AdaptyResult.Error -> call.reject(result.error.localizedMessage)
+          }
+        }
+  }
+
+  @PluginMethod
+  fun presentCodeRedemptionSheet(call: PluginCall) {
+    call.resolve()
+  }
+
+  @PluginMethod
+  fun restorePurchases(call: PluginCall) {
+    Adapty.restorePurchases { result ->
+      when (result) {
+        is AdaptyResult.Success -> {
+          val data = JSObject()
+          data.put("profile", result.value.toJson())
+          call.resolve(data)
+        }
+        is AdaptyResult.Error -> call.reject(result.error.localizedMessage)
+      }
+    }
+  }
+
+  @PluginMethod
+  fun setLogLevel(call: PluginCall) {
+    val logLevelStr = call.getString("logLevel") ?: return call.reject("logLevel is required")
+
+    val logLevel =
+        when (logLevelStr) {
+          "verbose" -> AdaptyLogLevel.VERBOSE
+          "info" -> AdaptyLogLevel.INFO
+          "warn" -> AdaptyLogLevel.WARN
+          "error" -> AdaptyLogLevel.ERROR
+          else -> AdaptyLogLevel.NONE
+        }
+
+    Adapty.logLevel = logLevel
+    call.resolve()
+  }
+
+  // didLoadLatestProfile // TODO
+
+  companion object {
+    const val TAG: String = "AdaptyPlugin"
+  }
+}
