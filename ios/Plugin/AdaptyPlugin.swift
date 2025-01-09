@@ -195,31 +195,36 @@ public class AdaptyPlugin: CAPPlugin, AdaptyDelegate {
     }
   }
 
+  // TODO implement after update to Adapty SDK >2.11.0
   @objc func setFallbackPaywalls(_ call: CAPPluginCall) {
-    guard let fileName = call.getString("fileName") else {
-      return call.reject("[AdaptyPlugin] Missing fileName argument")
-    }
+    call.unimplemented("[AdaptyPlugin] setFallbackPaywalls is not implemented")
+    // guard let fileName = call.getString("fileName") else {
+    //   return call.reject("[AdaptyPlugin] Missing fileName argument")
+    // }
 
-    guard let fileNameArr = fileName.components(separatedBy: ".") else {
-      return call.reject("[AdaptyPlugin] Invalid fileName argument")
-    }
-    let forResource = !fileNameArr.isEmpty ? fileNameArr[0] : nil
-    let withExtension = (fileNameArr.count > 1) ? fileNameArr[1] : "json"
-    guard let forResource = forResource,
-      let fileURL = Bundle.main.url(forResource: forResource, withExtension: withExtension)
-    else {
-      return call.reject("[AdaptyPlugin] Invalid fileName argument")
-    }
+    // let fileNameArr = fileName.components(separatedBy: ".")
+    // let forResource = !fileNameArr.isEmpty ? fileNameArr[0] : nil
+    // let withExtension = (fileNameArr.count > 1) ? fileNameArr[1] : "json"
+    // guard let forResource = forResource,
+    //   let fileURL = Bundle.main.url(forResource: forResource, withExtension: withExtension)
+    // else {
+    //   return call.reject("[AdaptyPlugin] Invalid fileName argument")
+    // }
 
-    Adapty.setFallbackPaywalls(fileURL: fileURL) { maybeErr in
-      if let error = maybeErr {
-        return call.reject(
-          "[AdaptyPlugin] \(error.localizedDescription)", String(error.adaptyErrorCode.rawValue),
-          error.originalError)
-      }
+    // do {
 
-      call.resolve()
-    }
+    //   Adapty.setFallbackPaywalls(fileURL) { maybeErr in
+    //     if let error = maybeErr {
+    //       return call.reject(
+    //         "[AdaptyPlugin] \(error.localizedDescription)", String(error.adaptyErrorCode.rawValue),
+    //         error.originalError)
+    //     }
+
+    //     call.resolve()
+    //   }
+    // } catch {
+    //   return call.reject("[AdaptyPlugin] Error reading file data", error.localizedDescription)
+    // }
   }
 
   @objc func getProfile(_ call: CAPPluginCall) {
