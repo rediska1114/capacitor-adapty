@@ -203,10 +203,10 @@ class AdaptyPlugin : Plugin() {
   fun setFallbackPaywalls(call: PluginCall) {
     val fileName = call.getString("fileName") ?: "android_fallback.json"
 
-    val location = FileLocation.fromAsset(fileName)
+    // val location = FileLocation.fromAsset(fileName)
 
     try {
-      Adapty.setFallbackPaywalls(location) { error ->
+      Adapty.setFallbackPaywalls(fileName) { error ->
         if (error != null) {
           call.reject(error.localizedMessage)
         } else {
